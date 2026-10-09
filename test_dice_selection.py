@@ -5,8 +5,10 @@ exercise exact, known scenarios -- an invalid partial selection, a valid
 selection, and the straight-with-leftover case -- and confirm the UI reacts
 correctly with no console errors.
 """
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 
+PAGE_PATH = Path(__file__).parent / "play_dice.html"
 errors = []
 
 with sync_playwright() as p:
@@ -15,7 +17,7 @@ with sync_playwright() as p:
     page.on("pageerror", lambda exc: errors.append(f"pageerror: {exc}"))
     page.on("console", lambda m: errors.append(f"console.{m.type}: {m.text}") if m.type == "error" else None)
 
-    page.goto("file:///home/rodo/Documents/Farkle/play_dice.html")
+    page.goto(f"file://{PAGE_PATH}")
     page.click("#startBtn")
     page.wait_for_timeout(200)
 

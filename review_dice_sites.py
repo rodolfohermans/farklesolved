@@ -11,7 +11,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BRAVE_PATH = "/usr/bin/brave-browser"
-OUT = Path("/tmp/claude-1000/-home-rodo-Documents-Farkle/b09a2a93-5ec6-4b86-bb34-948c9e85aa30/scratchpad/dice_review")
+OUT = Path(__file__).parent / "dice_review_output"
 OUT.mkdir(parents=True, exist_ok=True)
 
 SITES = {
