@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KCD Dice Strategy — Exact Analysis</title>
+<style>
+  :root{
+    --bg:#f7f5f0; --panel:#ffffff; --ink:#201c16; --muted:#6b6457;
+    --line:#e3ddd0; --accent:#8a3324; --accent2:#2f5d50; --accent3:#c98a2c;
+    --good:#2f5d50; --bad:#8a3324; --warn:#c98a2c;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#17140f; --panel:#201c16; --ink:#ece6d9; --muted:#a79e8c; --line:#3a332688;
+           --accent:#e2836f; --accent2:#7fc9b4; --accent3:#e3b35c; --good:#7fc9b4; --bad:#e2836f; --warn:#e3b35c; }
+  }
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    margin:0; padding:0 16px 80px; line-height:1.55;
+  }
+  .wrap{max-width:900px; margin:0 auto;}
+  header{padding:40px 0 20px;}
+  h1{font-size:1.9rem; margin:0 0 6px; letter-spacing:-0.01em;}
+  .sub{color:var(--muted); font-size:1.02rem; max-width:62ch;}
+  h2{font-size:1.25rem; margin:46px 0 10px; padding-top:10px; border-top:1px solid var(--line);}
+  h3{font-size:1.02rem; margin:22px 0 8px; color:var(--accent2);}
+  p{max-width:70ch;}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:20px 22px; margin:16px 0;
+  }
+  table{border-collapse:collapse; width:100%; font-size:0.93rem; margin:12px 0;}
+  th,td{padding:8px 10px; text-align:right; border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:.04em;}
+  tbody tr:last-child td{border-bottom:none;}
+  .num{font-family:var(--mono);}
+  .tag{
+    display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.75rem;
+    font-weight:600; letter-spacing:.02em;
+  }
+  .tag.stop{background:color-mix(in srgb, var(--bad) 18%, transparent); color:var(--bad);}
+  .tag.go{background:color-mix(in srgb, var(--good) 18%, transparent); color:var(--good);}
+  .tag.mixed{background:color-mix(in srgb, var(--warn) 20%, transparent); color:var(--warn);}
+  .callout{
+    border-left:3px solid var(--accent3); background:color-mix(in srgb, var(--accent3) 10%, transparent);
+    padding:12px 16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:0.95rem;
+  }
+  .callout.finding{border-color:var(--accent2); background:color-mix(in srgb, var(--accent2) 10%, transparent);}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:640px){.grid2{grid-template-columns:1fr;}}
+  .stat{text-align:center; padding:14px 8px;}
+  .stat .v{font-size:1.6rem; font-weight:700; font-family:var(--mono);}
+  .stat .l{color:var(--muted); font-size:0.78rem; text-transform:uppercase; letter-spacing:.04em; margin-top:4px;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin:6px 0; font-size:0.85rem;}
+  .bar-label{width:120px; flex:0 0 120px; color:var(--muted); font-family:var(--mono);}
+  .bar-track{flex:1; background:var(--line); border-radius:6px; height:18px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px;}
+  .bar-val{width:70px; flex:0 0 70px; font-family:var(--mono); text-align:right;}
+  footer{margin-top:60px; padding-top:20px; border-top:1px solid var(--line); color:var(--muted); font-size:0.82rem;}
+  code{font-family:var(--mono); background:var(--line); padding:1px 5px; border-radius:4px; font-size:0.9em;}
+  .toc{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:0.88rem;}
+  .toc a{color:var(--accent2); text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+  .src-note{font-size:0.8rem; color:var(--muted); margin-top:4px;}
+
+  .flow{display:flex; flex-direction:column; align-items:center; margin:20px 0;}
+  .flow-node{width:100%; max-width:600px; padding:14px 20px; border-radius:12px; text-align:center; font-size:0.92rem; line-height:1.45;}
+  .flow-node.process{background:var(--panel); border:1.5px solid var(--line);}
+  .flow-node.decision{background:color-mix(in srgb, var(--accent3) 14%, var(--panel)); border:1.5px dashed var(--accent3); font-weight:600;}
+  .flow-node.win{background:color-mix(in srgb, var(--good) 18%, var(--panel)); border:1.5px solid var(--good); font-weight:700;}
+  .flow-node.bust{background:color-mix(in srgb, var(--bad) 18%, var(--panel)); border:1.5px solid var(--bad); font-weight:700;}
+  .flow-node.go{background:color-mix(in srgb, var(--accent2) 16%, var(--panel)); border:1.5px solid var(--accent2); font-weight:700;}
+  .flow-arrow{height:26px; width:2px; background:var(--muted); position:relative;}
+  .flow-arrow::after{content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:8px solid var(--muted);}
+  .flow-tag{font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin:2px 0 -2px; padding:2px 10px; border-radius:999px;}
+  .flow-tag.yes{background:color-mix(in srgb, var(--good) 20%, transparent); color:var(--good);}
+  .flow-tag.no{background:color-mix(in srgb, var(--bad) 20%, transparent); color:var(--bad);}
+  .flow-branch{display:flex; gap:18px; justify-content:center; align-items:flex-start; width:100%; max-width:720px; margin:4px 0;}
+  .flow-branch-col{display:flex; flex-direction:column; align-items:center; flex:1; gap:4px;}
+  .flow-branch-col .flow-node{max-width:100%; font-size:0.85rem; padding:12px 14px;}
+  .flow-cont-label{font-size:0.78rem; color:var(--muted); font-style:italic; margin:2px 0;}
+  .flow-table{width:100%; max-width:600px; margin:6px 0;}
+  .flow-table table{margin:0; font-size:0.85rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Kingdom Come: Deliverance — Dice Strategy</h1>
+  <p class="sub">An exact, computed solution to the single-turn push-your-luck decision and to the full two-player race, each verified against independent Monte Carlo simulation. Generated locally — all numbers below come from <code>farkle_kcd.py</code>, <code>farkle_dp.py</code>, <code>farkle_sim.py</code>, <code>farkle_race.py</code>, <code>race_dp.py</code>, <code>race_compare.py</code> and <code>farkle_report_data.py</code> in this folder.</p>
+  <div class="toc">
+    <a href="#tldr">Conclusions &amp; decision flowchart</a>
+    <a href="#solved">Is it solved?</a>
+    <a href="#rules">Rules modeled</a>
+    <a href="#bust">Bust probabilities</a>
+    <a href="#thresholds">Optimal thresholds</a>
+    <a href="#opening">Reading your first roll</a>
+    <a href="#decline">The "decline the triple" finding</a>
+    <a href="#compare">Strategy comparison</a>
+    <a href="#race">Who actually wins games</a>
+    <a href="#race-exact">The full race, solved exactly</a>
+    <a href="#cheatsheet">Cheat sheet</a>
+    <a href="#caveats">Caveats</a>
+  </div>
+</header>
+
+<section id="tldr">
+  <h2>Conclusions, up front</h2>
+  <p>
+    The rest of this report is the derivation, the exact numbers, and the validation. If you just want
+    the answer: play with the flowchart below, which captures essentially all of the decision quality
+    with none of the exact-threshold bookkeeping.
+  </p>
+  <div class="card">
+    <ul style="margin:0; padding-left:20px;">
+      <li>Both layers of this problem — the single-turn "push or bank" decision, and the full two-player
+        race to a target score — are solved <strong>exactly</strong> by dynamic programming, each
+        independently verified against large-sample Monte Carlo simulation and against a from-scratch
+        audit of the recursion logic itself.</li>
+      <li>Bust risk roughly tracks dice remaining: 3% with 6 dice, climbing to 67% with 1 die — but the
+        single biggest, most common strategic error isn't misjudging that risk, it's <strong>comparing the
+        wrong number to it</strong>: the right question is never "how many dice do I have," alone, it's
+        "how many dice do I have <em>and</em> how much have I already banked this turn," together.</li>
+      <li>Two genuinely non-obvious, DP-verified findings: it's sometimes correct to <strong>decline a
+        cheap three-of-a-kind</strong> (triple 2s or 3s) and bank only a stray single instead, purely to
+        keep more dice live; and once either player is close to the match target, the correct play is to
+        <strong>never bank partial progress</strong> — keep rolling for the exact win, every dice count,
+        not just a cautious "take the safe points."</li>
+      <li>Going first is worth a real, exactly-quantified edge (about 56% win probability between two
+        optimal players), and full race-awareness beats a strategy that only optimizes each turn in
+        isolation by roughly 3.5 points of win rate — most of that from adjusting risk tolerance
+        throughout the whole game, not just the final turn.</li>
+    </ul>
+  </div>
+
+  <h3>The decision, as a flowchart</h3>
+  <p>
+    This collapses the exact per-state thresholds derived later in this report into rule-of-thumb
+    numbers. It intentionally blurs small differences between specific match targets — checked against
+    both commonly-cited defaults for a standard KCD1 match (sources disagree: 2,000 and 4,000 points
+    both appear as "the" default, and real games vary further by opponent and wager — see the note
+    below the chart). The qualitative shape of the decision is the same at either target; only the
+    precise cutoff numbers shift a little.
+  </p>
+
+  <div class="flow">
+    <div class="flow-node process">① Roll your dice — 6 at the start of a turn, or however many are still live if you're continuing.</div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node decision">② Did that roll produce any scoring dice at all (a 1, a 5, or a triple-or-better)?</div>
+    <div class="flow-branch">
+      <div class="flow-branch-col">
+        <span class="flow-tag no">no</span>
+        <div class="flow-node bust">BUST. Every point banked this turn is lost. Turn passes to your opponent.</div>
+      </div>
+      <div class="flow-branch-col">
+        <span class="flow-tag yes">yes</span>
+        <div class="flow-cont-label">continue to ③ below</div>
+      </div>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node process">③ Bank the scoring dice — normally take the highest-scoring combination on offer. (Exception worth knowing: a cheap triple of 2s or 3s is sometimes better left unbanked in favor of a single stray 1 or 5 — see "Decline the cheap triple" below. Blurred here on purpose; it's a small effect.)</div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node decision">④ Does your new total (already-banked score + this turn's points) reach the match target?</div>
+    <div class="flow-branch">
+      <div class="flow-branch-col">
+        <span class="flow-tag yes">yes</span>
+        <div class="flow-node win">STOP. You win the match.</div>
+      </div>
+      <div class="flow-branch-col">
+        <span class="flow-tag no">no</span>
+        <div class="flow-cont-label">continue to ⑤ below</div>
+      </div>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node decision">⑤ Are either you or your opponent within roughly 1,000 points of the target (the "end-game zone")?</div>
+    <div class="flow-branch">
+      <div class="flow-branch-col">
+        <span class="flow-tag yes">yes</span>
+        <div class="flow-node go">END-GAME RULE: never bank partial progress here. Keep rolling with whatever dice you have left until you hit the target outright or bust trying — dice-remaining stops mattering this close to the finish.</div>
+      </div>
+      <div class="flow-branch-col">
+        <span class="flow-tag no">no</span>
+        <div class="flow-cont-label">continue to ⑥ below (normal mid-game rule)</div>
+      </div>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node process">⑥ Compare your turn total so far to this rule of thumb for your current dice count:</div>
+    <div class="flow-table card">
+      <table>
+        <thead><tr><th>Dice left</th><th>Rule of thumb</th></tr></thead>
+        <tbody>
+          <tr><td>5 or 6</td><td>Keep rolling, essentially always</td></tr>
+          <tr><td>4</td><td>Keep rolling unless your turn total is already past ~1,000</td></tr>
+          <tr><td>3</td><td>Keep rolling unless your turn total is already past ~400</td></tr>
+          <tr><td>2</td><td>Bank — unless your total is right at its minimum possible (~200, i.e. four lone 5s and nothing else)</td></tr>
+          <tr><td>1</td><td>Bank — unless your total is right at its minimum possible (~250, i.e. five lone 5s and nothing else)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-node decision">⑦ Does the rule of thumb above say "keep rolling"?</div>
+    <div class="flow-branch">
+      <div class="flow-branch-col">
+        <span class="flow-tag yes">yes</span>
+        <div class="flow-node go">CONTINUE — go back to ① and roll your remaining dice again.</div>
+      </div>
+      <div class="flow-branch-col">
+        <span class="flow-tag no">no</span>
+        <div class="flow-node win">BANK — end your turn here and keep the points.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="src-note">
+    On the realistic target: independent sources disagree on KCD1's default match length —
+    gamepressure.com states a 2,000-point default, another wiki says "usually 4,000," and several
+    sources agree the actual target scales with the opponent and the size of the wager. This report's
+    fully-detailed exact solve below targets G=4,000; as a check, the full race was also re-solved at
+    G=2,000 and produces the same qualitative shape (push hard early, collapse near the finish, spike
+    when behind, cap when ahead) with similar-sized numbers — so the flowchart above and the cheat sheet
+    later in this report are reasonable for either commonly-cited target, and for stakes in between.
+  </p>
+</section>
+
+<section id="solved">
+  <h2>Is this game "solved," academically?</h2>
+  <p>Partly — in two distinguishable senses.</p>
+  <div class="callout finding">
+    <strong>The single-turn decision (when to bank vs. keep rolling) is exactly solved.</strong>
+    This is structurally the same problem as the classic dice game <em>Pig</em>, whose optimal
+    stopping policy was computed exactly by Neller &amp; Presser (<em>"Optimal Play of the Dice Game
+    Pig," 2004</em>) via finite-state dynamic programming. KCD's dice game has a richer scoring table
+    (triples, straights, doubling multipliers) but it is still a <strong>finite Markov Decision
+    Process</strong>: the state is just (dice remaining to roll, points banked this turn), and all
+    scores are multiples of 50, so a discretized value-iteration grid is <em>exact</em>, not
+    approximate. That's what this report's thresholds come from — not a heuristic, not a trained
+    model, a provably optimal policy for the stated objective.
+  </div>
+  <p>
+    <strong>Update: the full two-player race has now also been solved exactly</strong> — see
+    <a href="#race-exact">§ The full race, solved exactly</a>. It needed a state of
+    <code>(your score, opponent score)</code> and backward induction over that larger (but still
+    finite) grid, which correctly produces risk-seeking / risk-averse adjustments near the finish line
+    that the simpler turn-level solve can't see. Both the turn-level and full-race solutions are
+    reported below, each checked against independent large-sample Monte Carlo simulation, and the two
+    are compared head-to-head so you can see exactly how much the harder solve actually buys you.
+  </p>
+</section>
+
+<section id="rules">
+  <h2>Rules modeled</h2>
+  <div class="card">
+    <table>
+      <tbody>
+        <tr><td>Single 1 / single 5</td><td class="num">100 / 50</td></tr>
+        <tr><td>Three of a kind (1s / 2s / 3s / 4s / 5s / 6s)</td><td class="num">1000 / 200 / 300 / 400 / 500 / 600</td></tr>
+        <tr><td>Each additional die beyond 3-of-a-kind</td><td class="num">doubles the value</td></tr>
+        <tr><td>Straight 1–5 / 2–6 / full 1–6</td><td class="num">500 / 750 / 1500</td></tr>
+        <tr><td>Bust</td><td class="num">no scoring die/combo at all → turn's points lost</td></tr>
+        <tr><td>Hot dice</td><td class="num">bank all currently-rolled dice → re-roll all 6</td></tr>
+      </tbody>
+    </table>
+    <p class="src-note">Devil's-head wildcard dice (special inventory items) are out of scope — this models the default 6 regular dice.</p>
+  </div>
+  <p>Two rules matter more than they first appear, and both are modeled exactly:</p>
+  <ul>
+    <li><strong>You choose <em>how many</em> of a scoring face to bank, not just whether to.</strong>
+      Two 5s can be banked one at a time. A triple+ group can also be partially declined — e.g. with
+      four 2s you may bank only 3 of them. 2s/3s/4s/6s can <em>never</em> be banked below a group of 3
+      (a lone 2 never scores).</li>
+    <li><strong>A straight can have leftover dice.</strong> Rolling six dice as <code>{1,2,3,4,5,5}</code>
+      lets you bank the 1–5 straight (500) <em>and</em> the spare 5 (+50) — the model checks for a
+      straight pattern inside the roll, not just an exact match of all dice.</li>
+  </ul>
+  <h3>Rules engine spot-check</h3>
+  <p>
+    The DP and its Monte Carlo cross-checks elsewhere in this report both call the same scoring function
+    (<code>enumerate_actions</code> in <code>farkle_kcd.py</code>), so agreement between them confirms
+    the solver's logic, not that the scoring rules themselves were transcribed correctly from the game.
+    Here's that layer checked by hand against a few specific rolls:
+  </p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Roll</th><th>Best score available</th><th>By hand</th></tr></thead>
+      <tbody>
+        <tr><td class="num">{1,2,3,4,5,5}</td><td>straight 1–5 + spare 5</td><td class="num">500 + 50 = 550</td></tr>
+        <tr><td class="num">{2,2,2,2}</td><td>four 2s (double the three-of-a-kind value)</td><td class="num">200 × 2 = 400</td></tr>
+        <tr><td class="num">{5,5,5,5,5,5}</td><td>six 5s (triple the value three times over)</td><td class="num">500 × 2³ = 4,000</td></tr>
+        <tr><td class="num">{1,1,1,2,3,4}</td><td>three 1s only (2/3/4 don't score alone or as a pair)</td><td class="num">1,000</td></tr>
+        <tr><td class="num">{2,3,4,6}</td><td>nothing scores at all</td><td class="num">bust</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="bust">
+  <h2>Bust probability by dice remaining</h2>
+  <p>Exact combinatorics (not simulated) over all 6<sup>k</sup> equally likely outcomes for rolling <code>k</code> dice:</p>
+  <div class="card">
+    <div class="bar-row"><div class="bar-label">6 dice</div><div class="bar-track"><div class="bar-fill" style="width:3.1%;background:var(--good)"></div></div><div class="bar-val">3.09%</div></div>
+    <div class="bar-row"><div class="bar-label">5 dice</div><div class="bar-track"><div class="bar-fill" style="width:7.7%;background:var(--good)"></div></div><div class="bar-val">7.72%</div></div>
+    <div class="bar-row"><div class="bar-label">4 dice</div><div class="bar-track"><div class="bar-fill" style="width:15.7%;background:var(--warn)"></div></div><div class="bar-val">15.74%</div></div>
+    <div class="bar-row"><div class="bar-label">3 dice</div><div class="bar-track"><div class="bar-fill" style="width:27.8%;background:var(--warn)"></div></div><div class="bar-val">27.78%</div></div>
+    <div class="bar-row"><div class="bar-label">2 dice</div><div class="bar-track"><div class="bar-fill" style="width:44.4%;background:var(--bad)"></div></div><div class="bar-val">44.44%</div></div>
+    <div class="bar-row"><div class="bar-label">1 die</div><div class="bar-track"><div class="bar-fill" style="width:66.7%;background:var(--bad)"></div></div><div class="bar-val">66.67%</div></div>
+  </div>
+  <p>Risk climbs steadily as dice run out, and the increments get bigger in absolute terms toward the end: 6→5 only costs 4.6 points, but each subsequent step costs more (+8.0, +12.0, +16.7, +22.2), so the last die you have is the single most dangerous one to risk, not any particular "jump" partway through.</p>
+</section>
+
+<section id="thresholds">
+  <h2>Optimal thresholds (exact DP)</h2>
+  <p>
+    <code>V(k, T)</code> = expected total points this turn, playing optimally, with <code>k</code> dice
+    left to roll and <code>T</code> already banked this turn. The rule is simply:
+    <strong>keep rolling while <code>T</code> is at or below the threshold for your current dice count;
+    bank once you're past it.</strong> Busting from any state forfeits <code>T</code> entirely — that
+    asymmetry (lose the whole pile vs. gain a known expected amount) is what produces a finite,
+    computable cutoff.
+  </p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Dice remaining</th><th>Keep rolling while turn total ≤</th><th>E[turn value] from 0</th></tr></thead>
+      <tbody>
+        <tr><td>6 (opening roll / hot dice)</td><td class="num">12,900</td><td class="num">564.4</td></tr>
+        <tr><td>5</td><td class="num">3,350</td><td class="num">359.7</td></tr>
+        <tr><td>4</td><td class="num">1,000</td><td class="num">235.1</td></tr>
+        <tr><td>3</td><td class="num">400</td><td class="num">191.0</td></tr>
+        <tr><td>2</td><td class="num">200</td><td class="num">178.4</td></tr>
+        <tr><td>1</td><td class="num">250</td><td class="num">208.5</td></tr>
+      </tbody>
+    </table>
+    <p class="src-note">The k&lt;6 values in the last column are the DP's boundary condition (starting
+      with that many dice and T=0) — a reference point for the solver, not a state you'd actually
+      begin a turn in (a turn always starts at k=6). Don't read V(1,0)=208.5 &gt; V(3,0)=191.0 as "1 die
+      left is a better position than 3" — it isn't; see the next callout for why these numbers aren't
+      directly comparable.</p>
+  </div>
+  <div class="callout finding">
+    <strong>Two non-obvious shapes in this table:</strong>
+    <ul style="margin:8px 0 0;">
+      <li><strong>2 dice left is the single most conservative point in the game</strong> (threshold
+      200, lower than even 1 die left). With 2 dice your bust risk (44.4%) is high but you're not yet
+      at the "nothing to lose" extreme, and a bad outcome here forfeits a turn that's typically been
+      built up over several rolls.</li>
+      <li><strong>1 die left is looser than 2 dice left</strong> (250 vs 200) — counter-intuitive, since
+      1 die busts two-thirds of the time. The reason: succeeding with your last die (1/3 chance) banks
+      it and triggers <em>hot dice</em> — a full fresh 6-dice re-roll with only a 3.1% bust chance. A
+      lone last die is effectively a cheap ticket back to the safest state in the game, which is worth
+      the 66.7% risk of losing the turn.
+      <strong>One important caveat on how often this actually applies:</strong> every banked die is
+      worth at least 50 points (the cheapest legal bank is a lone 5), so reaching exactly 1 die left
+      requires banking 5 dice over the course of the turn, which means your turn total is <em>at
+      least</em> 5×50 = 250 — exactly the threshold. In other words, "push with 1 die left" is only ever
+      live in the single narrowest case (every prior bank this turn was a lone 5, totaling precisely
+      250); any other route to 1 die left (a 1 counted somewhere, or any triple+) puts you over 250 and
+      the answer flips straight back to "bank." Same logic makes the 200 threshold at 2 dice left an
+      exact floor too (4×50=200). The 1-vs-2 comparison above is real DP output, but it compares two
+      edge cases, not two live decision ranges — §Reading your first roll shows this concretely (no
+      opening-roll path ever reaches 1 or 2 dice left with a total anywhere near that low).</li>
+      <li>At 5 or 6 dice remaining the threshold is far above what a single roll can produce (maximum
+      is 8,000, from six 1s, still under 12,900) — but that doesn't mean the opening roll usually calls
+      for pushing on: it only applies when the opening roll's best play actually <em>leaves</em> you 5–6
+      dice. See the next section for how often that happens.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="opening">
+  <h2>Reading your first roll (strength → target)</h2>
+  <p>
+    The decisive factor isn't how many points your first roll scored — it's <strong>how many dice
+    you'd have left</strong> after banking the best available combination. Grouping all first-roll
+    outcomes (weighted by true probability) by that remaining-dice count:
+  </p>
+  <div class="card">
+    <table>
+      <thead><tr><th>After best action, dice left</th><th>P(this happens)</th><th>Range of values banked</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td>0 (outright bust)</td><td class="num">3.09%</td><td class="num">—</td><td><span class="tag stop">Turn over</span></td></tr>
+        <tr><td>6 — hot dice immediately</td><td class="num">6.25%</td><td class="num">400 – 8,000</td><td><span class="tag go">Keep rolling</span></td></tr>
+        <tr><td>5</td><td class="num">57.10%</td><td class="num">50 or 100</td><td><span class="tag go">Keep rolling</span></td></tr>
+        <tr><td>4 — never happens</td><td class="num">0%</td><td class="num">—</td><td>n/a</td></tr>
+        <tr><td>3</td><td class="num">9.26%</td><td class="num">200 – 1,000</td><td><span class="tag mixed">Depends (≤400 go, &gt;400 stop)</span></td></tr>
+        <tr><td>2</td><td class="num">10.93%</td><td class="num">400 – 2,000</td><td><span class="tag stop">Bank now</span></td></tr>
+        <tr><td>1</td><td class="num">13.37%</td><td class="num">400 – 4,000</td><td><span class="tag stop">Bank now</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout finding">
+    <strong>A row is missing on purpose, and that's itself a finding:</strong> the optimal policy never
+    deliberately leaves exactly 4 dice on the opening roll. Checked exhaustively — whenever banking
+    exactly 2 dice (say, two lone 5s) is on offer, there's always a strictly better alternative: either
+    bank only 1 of them and keep 5 dice live, or take a bigger combination instead. The practical rule:
+    <strong>if your opening roll gives you two 1s or two 5s with nothing else scoring, bank only one of
+    them</strong> — banking both and settling for 4 dice is never optimal.
+  </div>
+  <div class="callout finding">
+    <strong>Headline number: about 30.5% of opening rolls should be banked immediately</strong> —
+    before ever using all 6 dice. The full 24.3 points of that comes from the 1- and 2-dice-left rows
+    (where the best combination already ate 4–5 of your 6 dice, leaving only 1–2 "dead" dice whose bust
+    risk of 44–67% isn't worth it even on turn one); the remaining 6.2 points comes from the higher-value
+    half of the 3-dice-left row (triples worth more than 400, e.g. three 5s or three 6s — still a decent
+    number of dice left, just already enough points banked to clear that row's threshold). This runs
+    against a common instinct to always re-roll after a strong opening hand; it's really about
+    <em>what's left and how much you've already banked</em>, not points alone. (3.1% bust immediately,
+    66.4% should continue, 30.5% should stop — these three sum to 100%.)
+  </div>
+</section>
+
+<section id="decline">
+  <h2>The "decline the cheap triple" finding</h2>
+  <p>
+    A genuinely surprising, DP-verified result: it is sometimes correct to <strong>ignore an available
+    three-of-a-kind</strong> and bank only a lone 1 or 5 instead — purely to keep more dice live.
+  </p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Roll</th><th>Option A: just the stray single</th><th>Option B: just the triple</th><th>Option C: triple + the stray single too</th><th>Best</th></tr></thead>
+      <tbody>
+        <tr><td class="num">2,2,2,1,3,4</td><td>bank the 1 (100) → 5 left, <span class="num">V=428</span></td><td>bank triple 2s (200) → 3 left, <span class="num">V=258</span></td><td>bank both (300) → 2 left, <span class="num">V=300</span></td><td><span class="tag go">A: decline the triple</span></td></tr>
+        <tr><td class="num">3,3,3,5,2,4</td><td>bank the 5 (50) → 5 left, <span class="num">V=392</span></td><td>bank triple 3s (300) → 3 left, <span class="num">V=330</span></td><td>bank both (350) → 2 left, <span class="num">V=350</span></td><td><span class="tag go">A: decline the triple</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Option C (take the triple <em>and</em> the stray single — the obvious "greedy" play, and the
+    strongest real competitor) still loses to declining the triple entirely: 428 &gt; 300 and 392 &gt;
+    350. Banking the smaller amount but keeping 5 dice beats grabbing the bigger score and dropping to
+    only 2–3 dice — the extra survivability of a near-full hand is worth more than the point difference.
+    This only applies to the <em>cheap</em> triples (2s = 200, 3s = 300); triples of 4s/5s/6s and
+    especially 1s are valuable enough that taking them is correct. The lesson generalizes:
+    <strong>whenever a combination would strand you below ~4 dice for a modest point gain, check
+    whether banking less and keeping more dice live is better</strong> — it often is.
+  </p>
+</section>
+
+<section id="compare">
+  <h2>Strategy comparison (150,000 simulated turns each)</h2>
+  <div class="card">
+    <div class="bar-row"><div class="bar-label">DP-optimal</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--good)"></div></div><div class="bar-val">566.2</div></div>
+    <div class="bar-row"><div class="bar-label">Bank-max heuristic</div><div class="bar-track"><div class="bar-fill" style="width:89.5%;background:var(--accent2)"></div></div><div class="bar-val">506.8</div></div>
+    <div class="bar-row"><div class="bar-label">Stop &lt;3 dice left</div><div class="bar-track"><div class="bar-fill" style="width:86.3%;background:var(--warn)"></div></div><div class="bar-val">488.5</div></div>
+    <div class="bar-row"><div class="bar-label">Stop after 1st score</div><div class="bar-track"><div class="bar-fill" style="width:70.4%;background:var(--muted)"></div></div><div class="bar-val">398.4</div></div>
+    <div class="bar-row"><div class="bar-label">Stop &lt;2 dice left</div><div class="bar-track"><div class="bar-fill" style="width:70.1%;background:var(--bad)"></div></div><div class="bar-val">396.7</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Strategy</th><th>Mean pts / turn</th><th>Bust rate</th></tr></thead>
+    <tbody>
+      <tr><td>DP-optimal (exact)</td><td class="num">566.2</td><td class="num">19.0%</td></tr>
+      <tr><td>Bank everything scoring, stop at DP thresholds</td><td class="num">506.8</td><td class="num">17.3%</td></tr>
+      <tr><td>Stop once &lt;3 dice remain</td><td class="num">488.5</td><td class="num">20.0%</td></tr>
+      <tr><td>Stop immediately after any score</td><td class="num">398.4</td><td class="num">3.2%</td></tr>
+      <tr><td>Stop once &lt;2 dice remain</td><td class="num">396.7</td><td class="num">44.4%</td></tr>
+      <tr><td>Never stop (push until forced)</td><td class="num">0.0</td><td class="num">100%</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Playing it maximally safe ("stop after any score") has a low 3.2% bust rate but leaves ~30% of
+    the expected value on the table. "Never stop" guarantees eventual ruin — with bust probability
+    bounded away from zero every roll, the probability of surviving forever is zero.
+  </p>
+  <h3>Turn score distribution under the optimal policy (300,000 turns, independent run)</h3>
+  <p class="src-note">This is a separate, larger-sample simulation run from the 150,000-turn table above
+    (different seed) — it's why 564 / 19.3% here and 566.2 / 19.0% above don't match to the decimal.
+    Turn score has a standard deviation of about 508, so the standard error on a 300,000-turn mean is
+    about ±0.9 (±1.3 at 150,000 turns) — both observed means (564.36 and 566.15) are within 1.3 standard
+    errors of the DP's exact value, 564.44.</p>
+  <div class="grid2">
+    <div class="card stat"><div class="v">564</div><div class="l">mean points / turn</div></div>
+    <div class="card stat"><div class="v">19.3%</div><div class="l">bust rate</div></div>
+    <div class="card stat"><div class="v">500 / 1,200</div><div class="l">median / p90 (nonzero turns)</div></div>
+    <div class="card stat"><div class="v">1.9%</div><div class="l">chance of a 2,000+ turn</div></div>
+  </div>
+</section>
+
+<section id="race">
+  <h2>Who actually wins games? (seat-order-balanced head-to-head races)</h2>
+  <p>20,000 full races per matchup, target scores shown; first-mover advantage removed by alternating who rolls first.</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>DP-optimal vs.</th><th>Race to 1,000</th><th>Race to 4,000</th><th>Race to 10,000</th></tr></thead>
+      <tbody>
+        <tr><td>Bank-max heuristic</td><td class="num">55.4%</td><td class="num">59.5%</td><td class="num">65.2%</td></tr>
+        <tr><td>Stop after first score</td><td class="num">65.8%</td><td class="num">78.5%</td><td class="num">89.1%</td></tr>
+        <tr><td>Stop once &lt;3 dice remain</td><td class="num">57.7%</td><td class="num">62.8%</td><td class="num">68.9%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Cells show the DP-optimal policy's win rate. The edge compounds over a longer race (more turns = the higher-EV strategy's advantage dominates variance more), which is exactly what you'd expect from a policy that maximizes expected value per turn. This table uses the <em>turn-level</em> policy on both sides with no race-awareness at all — the next section solves the race itself exactly and asks how much further that gets you.</p>
+</section>
+
+<section id="race-exact">
+  <h2>The full race, solved exactly</h2>
+  <p>
+    The turn-level DP above maximizes <em>expected points per turn</em>. That is not quite the same
+    objective as maximizing <em>probability of winning a race to a target</em> — the two diverge near
+    the finish line, where guaranteeing a win is worth more than squeezing out extra expected points
+    you'll never get to spend. To fix that, the full race was solved as its own, larger finite Markov
+    game: state = <code>(your banked score, opponent's banked score)</code>, both in steps of 50 up to
+    target <code>G = 4000</code>. Define
+  </p>
+  <div class="callout">
+    <code>F(x, y) = P(the player about to roll wins the race | own score = x, opponent's score = y)</code>
+  </div>
+  <p>
+    <code>F</code> is a fixed point: stopping with a new total <code>z = x+T</code> either wins outright
+    (<code>z ≥ G</code>) or hands the turn to the opponent, who then faces <code>F(y, z)</code> — so
+    stopping is worth <code>1 − F(y, z)</code> to the active player. Busting hands the turn over with
+    score unchanged: worth <code>1 − F(y, x)</code>. This couples every <code>(x, y)</code> to every
+    other <code>(y, x′)</code> pair, so it was solved by Gauss-Seidel value iteration over the whole
+    80×80 score grid at once (scores 0–3,950 in steps of 50; the 81st value per axis is the absorbing
+    "already won" boundary, handled separately, not a grid cell), with the within-turn decision vectorized across <em>every</em>
+    opponent score simultaneously. Unlike the turn-level DP, this needed no arbitrary truncation ceiling
+    — the natural absorbing boundary is the literal target score <code>G</code>, so the solution is
+    exact, not approximate, up to the 50-point grid (which is exact anyway, since every achievable score
+    is a multiple of 50). It converged to a tolerance of 10⁻⁷ in 22 sweeps, about 2.7 minutes on this
+    machine.
+  </p>
+
+  <h3>Headline number</h3>
+  <div class="grid2">
+    <div class="card stat"><div class="v">55.71%</div><div class="l">exact P(win) for whoever rolls first, race to 4,000, both players optimal</div></div>
+    <div class="card stat"><div class="v">55.90%</div><div class="l">independent 10,000-race Monte Carlo estimate of the same quantity</div></div>
+  </div>
+  <p>Going first is worth a real, quantifiable edge — about 5.7 percentage points above a coin flip — even between two perfectly-played sides, purely from the extra roll.</p>
+
+  <h3>Exact solve vs. direct Monte Carlo, at six representative states</h3>
+  <div class="card">
+    <table>
+      <thead><tr><th>Your score / opponent's score</th><th>Exact F(x,y)</th><th>Monte Carlo (N=50,000)</th><th>Difference</th></tr></thead>
+      <tbody>
+        <tr><td>0 / 0 (game start)</td><td class="num">0.55712</td><td class="num">0.55722</td><td class="num">0.00010</td></tr>
+        <tr><td>2,000 / 0 (big lead)</td><td class="num">0.90713</td><td class="num">0.90674</td><td class="num">0.00039</td></tr>
+        <tr><td>0 / 2,000 (big deficit)</td><td class="num">0.16057</td><td class="num">0.15998</td><td class="num">0.00059</td></tr>
+        <tr><td>3,500 / 0 (almost home)</td><td class="num">0.99508</td><td class="num">0.99564</td><td class="num">0.00056</td></tr>
+        <tr><td>1,000 / 1,500 (500 behind)</td><td class="num">0.44834</td><td class="num">0.44998</td><td class="num">0.00164</td></tr>
+        <tr><td>3,000 / 3,500 (500 behind, late)</td><td class="num">0.44828</td><td class="num">0.44748</td><td class="num">0.00080</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src-note">
+    This table was re-run at N=50,000 (up from an initial N=10,000) after an independent audit found a
+    too-tight numerical tolerance in the simulator that could occasionally make it play a slightly
+    different policy than the one actually solved for — see §Caveats. The exact <code>F</code> column is
+    completely unchanged by that fix (it only affected the simulator); the Monte Carlo column moved by
+    less than its own margin of error.
+  </p>
+  <p>
+    Every difference is well inside its own row's 95% confidence interval (computed per-row from that
+    row's empirical proportion — these range from about ±0.0006 for the near-certain 0.995 row up to
+    ±0.0044 for the near-50/50 rows at this larger N, not one blanket number). The exact dynamic program
+    and independent
+    simulation agree everywhere they were checked — the strongest form of verification available short
+    of a formal proof, though it's worth being precise about <em>what</em> it verifies: both the DP and
+    this Monte Carlo check share the same underlying rules engine (<code>farkle_kcd.py</code>), so this
+    confirms the fixed-point solver was implemented correctly, not that the scoring rules themselves are
+    modeled correctly (that's checked separately — see §Rules modeled's validation table).
+  </p>
+  <p class="src-note">
+    The two 0.448-ish rows above (500-point deficit, at two different points in the game) land within
+    0.00006 of each other — that's a genuine coincidence of this specific grid, not a hidden symmetry:
+    the same "500 behind" gap computed at (0,500) gives 0.4553 and at (2,500/3,000) gives 0.4176, so the
+    win probability for a fixed deficit does move around depending on absolute score, it just happens to
+    revisit roughly the same value at these two particular points.
+  </p>
+
+  <h3>How much does race-awareness actually buy you?</h3>
+  <p>Three policies, raced head-to-head 300,000 times each (seat-order balanced) — large enough to
+    resolve a sub-percentage-point effect with confidence:</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Matchup</th><th>Race-aware exact wins</th><th>Other wins</th></tr></thead>
+      <tbody>
+        <tr><td>vs. (a) pure turn-EV-max, completely race-blind</td><td class="num">53.54% ± 0.18%</td><td class="num">46.46%</td></tr>
+        <tr><td>vs. (b) turn-EV-max + the "obvious" patch: stop the instant you'd reach the target</td><td class="num">52.80% ± 0.18%</td><td class="num">47.20%</td></tr>
+      </tbody>
+    </table>
+    <p class="src-note">± values are 95% confidence intervals from N=300,000 races per matchup. (This
+      table was re-run after an audit-found tolerance bug fix in the simulator — see §Caveats; the
+      corrected numbers are very close to, and the conclusion is unchanged from, the first run.)</p>
+  </div>
+  <div class="callout finding">
+    The patch moves race-aware's win rate from 53.54% to 52.80% — a drop of 0.73 ± 0.25 percentage
+    points (95% CI), which <em>is</em> statistically distinguishable from zero at this sample size (an
+    earlier, smaller run showed the same direction but was too small to tell apart from noise; this is
+    the corrected, adequately-powered version). Measured as edge-over-a-coin-flip, pure race-blind play
+    (a) is 3.54 points above 50%, and the patched version (b) is 2.80 points above 50%.
+    <strong>The trivial "stop once you'd already won" patch closes only about one-fifth of that edge
+    (2.80⁄3.54 ≈ 79% survives the patch) — the remaining four-fifths comes from the dynamic programming
+    adjusting risk tolerance throughout the whole game</strong>: pushing harder than the fixed table
+    says while behind, banking more conservatively at low dice counts while ahead, and never banking
+    partial progress near the finish — not just fixing the final-turn blind spot. The table below shows
+    exactly what that broader adjustment looks like.
+  </div>
+
+  <h3>How the real threshold shifts with the score gap</h3>
+  <p>
+    Each cell is the race-aware "keep rolling while turn total ≤ X" threshold for that many dice
+    remaining, at that specific (your score, opponent's score). Compare to the fixed, score-blind
+    thresholds from §Optimal thresholds: <strong>6→12,900 · 5→3,350 · 4→1,000 · 3→400 · 2→200 · 1→250.</strong>
+  </p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Situation</th><th>k=1</th><th>k=2</th><th>k=3</th><th>k=4</th><th>k=5</th><th>k=6</th></tr></thead>
+      <tbody>
+        <tr><td>Tied, early (0 / 0)</td><td class="num">250</td><td class="num">200</td><td class="num">400</td><td class="num">950</td><td class="num">2,100</td><td class="num">3,100</td></tr>
+        <tr><td>Far behind (0 / 3,000)</td><td class="num">800</td><td class="num">600</td><td class="num">3,950</td><td class="num">3,950</td><td class="num">3,950</td><td class="num">3,950</td></tr>
+        <tr><td>Far ahead (3,000 / 0)</td><td class="num">150</td><td class="num">150</td><td class="num">250</td><td class="num">950</td><td class="num">950</td><td class="num">950</td></tr>
+        <tr><td>Both near finish, tied (3,500 / 3,500)</td><td class="num">450</td><td class="num">450</td><td class="num">450</td><td class="num">450</td><td class="num">450</td><td class="num">450</td></tr>
+        <tr><td>Behind, near finish (3,000 / 3,900)</td><td class="num">950</td><td class="num">950</td><td class="num">950</td><td class="num">950</td><td class="num">950</td><td class="num">950</td></tr>
+        <tr><td>Ahead, near finish (3,900 / 3,000)</td><td class="num">50</td><td class="num">50</td><td class="num">50</td><td class="num">50</td><td class="num">50</td><td class="num">50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <strong>Read this before taking the table above at face value:</strong> a threshold
+    value of exactly <code>G − x − 50</code> (your remaining gap to the target, minus one grid step) is
+    the <em>largest representable number before the grid saturates into "already won."</em> A cell
+    showing that number doesn't mean "a generous cap" — it means <strong>the policy never
+    voluntarily banks short of the target at all</strong>: keep rolling for literally any value up to
+    the point where you'd either win outright or bust trying. Four of the six rows below hit exactly
+    this ceiling at every k (far-behind's k=3–6, far-ahead's k=4–6, and both near-finish rows across the
+    board) — check each against the arithmetic: 3,950 = 4000−0−50 is <em>that player's own</em> ceiling
+    (deficit case, x=0), 950 = 4000−3000−50 (lead case, x=3,000, and separately the near-finish case,
+    x=3,000), 450 = 4000−3,500−50, 50 = 4000−3,900−50.
+  </div>
+  <p>With that reading in hand, four clear patterns fall out of the exact numbers:</p>
+  <ul>
+    <li><strong>Even tied at the very start, the race-aware thresholds for 5–6 dice are dramatically
+      lower than the pure-EV table</strong> (2,100 and 3,100 vs. 3,350 and 12,900 — genuine, non-saturated
+      values here, since 2,100 and 3,100 are well short of 4000−0−50=3,950). Pure EV-maximization says
+      push almost without limit with a fresh hand because rare huge turns pull the long-run average up;
+      but in a race, a turn that big already makes you a near-certain winner, so there's nothing left to
+      gain by risking it for a still-bigger pile of points you don't need.</li>
+    <li><strong>Falling behind makes you stop banking safe partial progress altogether, not just push
+      harder</strong> — at k=1–2 the numbers (800, 600) are real, elevated-but-finite thresholds; from
+      k=3 up, the cells are saturated at 3,950, meaning with 3 or more dice in hand while 3,000 behind,
+      the policy says roll for the whole gap in one go rather than bank anything less. Makes sense:
+      banking a partial amount while still well behind doesn't change your underlying problem much,
+      while a single huge turn might end the game immediately.</li>
+    <li><strong>Holding a lead flips the same logic the other way at low k, but saturates at high
+      k too</strong> — 150/150/250 at k=1–3 are genuine conservative thresholds (bank early with few
+      dice, protect the lead), but 950 at k=4–6 is <em>also</em> a saturated ceiling (4000−3,000−50) —
+      with a big lead and 4+ dice in hand, the policy still says push for the kill rather than bank a
+      safe partial gain, exactly the opposite of "bank early and often" in that regime.</li>
+    <li><strong>Right at the finish, every single cell is saturated</strong> — all three near-finish
+      rows hit their ceiling (450, 950, 50 respectively) at every k from 1 to 6. The policy is
+      unanimous regardless of dice remaining: <strong>never bank a partial amount this close to the
+      target — always roll for the exact win, or bust trying.</strong> That's a real, if slightly
+      aggressive-sounding, finding: locking in modest guaranteed progress near the finish line is worse
+      than swinging for the complete win, because busting only resets you to a position the DP already
+      rates almost as well as the partial-bank alternative would have, while succeeding ends the game
+      immediately.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Scope note:</strong> the exact race solve above is computed for target <code>G = 4,000</code>
+    specifically (KCD's match length varies by opponent/wager). Re-solving for a different target is a
+    few minutes of recomputation (<code>race_dp.py</code>, runtime scales worse than linearly with
+    <code>G</code> — roughly 2 seconds for G=300, 20s for G=1,000, 52s for G=2,000, 162s for G=4,000)
+    — ask if a specific match target should be solved.
+  </div>
+</section>
+
+<section id="cheatsheet">
+  <h2>Practical cheat sheet</h2>
+  <div class="card">
+    <ol style="padding-left:20px; margin:0;">
+      <li><strong>The one rule everything else below follows from:</strong> compare your running turn
+        total <em>so far</em> to the threshold for however many dice you'd have left to roll next —
+        6→12,900 · 5→3,350 · 4→1,000 · 3→400 · 2→200 · 1→250. Keep rolling while you're at or under that
+        number for your current dice count; bank once you're over it. It's never "N dice left → always
+        stop" or "N dice left → always push" in isolation — dice-remaining sets the bar, but your
+        accumulated total is what gets compared against it.</li>
+      <li><strong>Why the opening roll so often means banking immediately despite that:</strong> if your
+        first roll's best combination already eats 4–5 of your 6 dice, you're forced into the 1- or
+        2-dice-left thresholds (250 / 200). On the opening roll specifically, the cheapest way the
+        <em>optimal policy</em> ever actually lands there is already worth 400+ (it would rather keep
+        a cheap triple's dice live than bank them down to 1–2 remaining — see §Decline the triple), so
+        landing at 1–2 dice left on the opening roll always means your total already clears the
+        threshold: bank and stop. (3 dice left on the opening roll is a genuine toss-up — stop if you've
+        already got &gt;400, otherwise push. 5–6 dice left → push, essentially always — and never happens
+        at exactly 4, see §Reading your first roll.)</li>
+      <li><strong>The 250 / 200 thresholds at 1–2 dice left are tighter than they look — they're
+        floors, not ranges:</strong> every legal bank is worth at least 50 points (the cheapest is a lone
+        5), so reaching exactly 1 die left requires having banked 5 dice already this turn, which means
+        your total is <em>at minimum</em> 5×50 = 250 — exactly the threshold. So "push with 1 die left"
+        is only ever live in the single narrowest case: every earlier bank this turn was a lone 5,
+        totaling precisely 250 (five of them, from possibly several rolls). Any 1 counted anywhere, or
+        any triple taken, pushes you over 250 and the answer is bank, full stop. Same exact-floor
+        situation at 2 dice left (4×50=200).</li>
+      <li><strong>When you have 5–6 dice and face a choice between a cheap triple (2s/3s) vs. a lone
+        1 or 5,</strong> check whether taking the smaller score but keeping more dice live beats grabbing
+        the triple — it often does (see §Decline the triple).</li>
+      <li><strong>Near the finish line, use the exact race-aware thresholds, not the fixed table —
+        and they say the opposite of "bank anything safe":</strong> the fixed thresholds above maximize
+        long-run expected points, which is <em>not</em> the same as maximizing your probability of
+        winning a race that's about to end. §The full race, solved exactly shows that once you're close
+        to the target, the correct policy is to <strong>never bank a partial amount at all</strong> —
+        keep rolling for the exact win (or bust trying) regardless of how many dice you have left.
+        Locking in a safe-but-incomplete gain is worse than swinging for the finish. The same "don't bank
+        partial progress" logic kicks in with 4+ dice in hand even while comfortably ahead by a lot
+        (e.g. a 3,000-point lead) — only with few dice (1–3) in hand does a lead call for the more
+        familiar "bank early, protect it" instinct.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="caveats">
+  <h2>Caveats &amp; scope</h2>
+  <ul>
+    <li>Devil's-head wildcard dice (special inventory items) are not modeled — this is the default 6-regular-dice game.</li>
+    <li>The fixed per-dice-count thresholds (§Optimal thresholds) maximize <em>expected points per
+      turn</em>, a risk-neutral objective that's provably right in isolation but diverges from
+      <em>maximizing win probability</em> near the end of a race — see §The full race, solved exactly
+      for the corrected, score-aware thresholds. Quantified: full race-awareness is worth 3.54 points
+      of win rate above a coin flip against a race-blind opponent (N=300,000, 95% CI ±0.18pp); about a
+      fifth of that comes from the obvious "stop once you've already won" fix and the rest from deeper,
+      statistically confirmed risk-tolerance adjustments through the whole game.</li>
+    <li>The full two-player race is solved exactly for target G=4,000; a different match length needs a
+      few minutes of recomputation (<code>race_dp.py</code>) rather than a fundamentally different method.</li>
+    <li>This report's DP code and Monte Carlo validation were independently audited line-by-line
+      (two separate reviews). The DP/Bellman recursion itself came back clean — an independent scalar
+      reimplementation matched the solvers to within 1e-9 to 1e-11, no bugs found. The validation code
+      had one real bug: a numerical tolerance in the race simulator (<code>1e-9</code>) tighter than the
+      solver's own convergence tolerance (~8.5e-8), which could make the simulator occasionally
+      "continue" at a handful of states where the converged policy said "stop." Fixed (raised to
+      <code>1e-6</code>) and every affected number in this report was re-run and updated; the correction
+      moved results by less than their own margin of error and changed no conclusion.</li>
+    <li>All code (<code>farkle_kcd.py</code>, <code>farkle_dp.py</code>, <code>farkle_sim.py</code>,
+      <code>farkle_race.py</code>, <code>farkle_report_data.py</code>, <code>race_dp.py</code>,
+      <code>race_compare.py</code>) lives alongside this file and regenerates every number shown here.</li>
+  </ul>
+</section>
+
+<footer>
+  Generated locally from exact dynamic programming + Monte Carlo verification (Python 3.12, numpy).
+  No data leaves this machine.
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+Loading pickled race solution (F, U_all)...
+Loaded. F[0,0]=0.557117, G=4000, N=81
+Solving single-turn EV-max policy...
+
+=== Part 1 (re-run, fixed tolerance, N=50,000): exact F vs direct MC ===
+  (x=    0, y=    0): exact F=0.55712   MC estimate=0.55722  (N=50000, 95% CI +/-0.00435)
+  (x= 2000, y=    0): exact F=0.90713   MC estimate=0.90674  (N=50000, 95% CI +/-0.00255)
+  (x=    0, y= 2000): exact F=0.16057   MC estimate=0.15998  (N=50000, 95% CI +/-0.00321)
+  (x= 3500, y=    0): exact F=0.99508   MC estimate=0.99564  (N=50000, 95% CI +/-0.00058)
+  (x= 1000, y= 1500): exact F=0.44834   MC estimate=0.44998  (N=50000, 95% CI +/-0.00436)
+  (x= 3000, y= 3500): exact F=0.44828   MC estimate=0.44748  (N=50000, 95% CI +/-0.00436)
+  Part 1 took 37.7s
+
+=== Part 2 (re-run, fixed tolerance, N=300,000): race-aware vs EV-max baselines ===
+  race-aware-exact vs (a) pure turn-EV-max (race-blind)      -> race-aware wins 53.54% +/- 0.18% (95% CI) | other wins 46.46%
+  race-aware-exact vs (b) turn-EV-max + endgame-stop patch   -> race-aware wins 52.80% +/- 0.18% (95% CI) | other wins 47.20%
+  Part 2 took 129.1s
+
+  Patch effect: (a)->(b) moved race-aware's win rate from 53.54% to 52.80%, a change of 0.73% +/- 0.25% (95% CI on the difference). Statistically distinguishable from zero.
+
+=== Part 3 (re-run, fixed tolerance): race-aware thresholds ===
+Fixed single-player thresholds (score-blind): {1: 250, 2: 200, 3: 400, 4: 1000, 5: 3350, 6: 12900}
+scenario                                  k=1      k=2      k=3      k=4      k=5      k=6      
+tied, early (x=0,y=0)                     250      200      400      950      2100     3100     
+far behind (x=0, y=3000)                  800      600      3950     3950     3950     3950     
+far ahead (x=3000, y=0)                   150      150      250      950      950      950      
+both near finish, tied (x=3500,y=3500)    450      450      450      450      450      450      
+behind near finish (x=3000,y=3900)        950      950      950      950      950      950      
+ahead near finish (x=3900,y=3000)         50       50       50       50       50       50       

@@ -1,0 +1,109 @@
+{
+  "bust_prob": {
+    "1": 0.6666666666666666,
+    "2": 0.4444444444444444,
+    "3": 0.2777777777777778,
+    "4": 0.1574074074074074,
+    "5": 0.07716049382716049,
+    "6": 0.030864197530864196
+  },
+  "thresholds": {
+    "1": 250,
+    "2": 200,
+    "3": 400,
+    "4": 1000,
+    "5": 3350,
+    "6": 12900
+  },
+  "value_fresh": {
+    "1": 208.5307187694293,
+    "2": 178.3612352411836,
+    "3": 191.00627015948663,
+    "4": 235.1240378244065,
+    "5": 359.67848035817264,
+    "6": 564.4376204138401
+  },
+  "opening_roll_groups": [
+    {
+      "dice_left_after": 1,
+      "prob": 0.1337448559670782,
+      "stop_prob_within_group": 1.0,
+      "min_val": 400,
+      "max_val": 4000,
+      "n_distinct_values": 20
+    },
+    {
+      "dice_left_after": 2,
+      "prob": 0.10931069958847736,
+      "stop_prob_within_group": 1.0,
+      "min_val": 400,
+      "max_val": 2000,
+      "n_distinct_values": 11
+    },
+    {
+      "dice_left_after": 3,
+      "prob": 0.09259259259259259,
+      "stop_prob_within_group": 0.6666666666666666,
+      "min_val": 200,
+      "max_val": 1000,
+      "n_distinct_values": 6
+    },
+    {
+      "dice_left_after": 5,
+      "prob": 0.5709876543209876,
+      "stop_prob_within_group": 0.0,
+      "min_val": 50,
+      "max_val": 100,
+      "n_distinct_values": 2
+    },
+    {
+      "dice_left_after": 6,
+      "prob": 0.0625,
+      "stop_prob_within_group": 0.0,
+      "min_val": 400,
+      "max_val": 8000,
+      "n_distinct_values": 32
+    }
+  ],
+  "opening_bust_prob": 0.030864197530864196,
+  "turn_stats": {
+    "bust_rate": 0.19271666666666668,
+    "mean": 564.356,
+    "p50": 500.0,
+    "p75": 850.0,
+    "p90": 1200.0,
+    "p95": 1700.0,
+    "p99": 2400.0,
+    "max": 8700.0,
+    "p_gt_1000": 0.1522,
+    "p_gt_2000": 0.019423333333333334
+  },
+  "strategy_comparison": [
+    {
+      "name": "DP-optimal",
+      "mean": 566.1526666666666,
+      "bust_rate": 0.19045333333333334
+    },
+    {
+      "name": "Bank-max + DP thresholds",
+      "mean": 506.78366666666665,
+      "bust_rate": 0.17344666666666667
+    },
+    {
+      "name": "Stop after first score",
+      "mean": 398.4073333333333,
+      "bust_rate": 0.0315
+    },
+    {
+      "name": "Stop once <3 dice remain",
+      "mean": 488.46366666666665,
+      "bust_rate": 0.19972666666666666
+    },
+    {
+      "name": "Stop once <2 dice remain",
+      "mean": 396.6913333333333,
+      "bust_rate": 0.44376666666666664
+    }
+  ],
+  "opening_immediate_stop_prob": 0.3047839506172839
+}

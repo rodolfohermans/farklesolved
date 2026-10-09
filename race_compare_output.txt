@@ -1,0 +1,33 @@
+Solving exact race DP (this takes ~2-3 minutes)...
+outer 0: max_change=0.484568
+outer 5: max_change=0.067531
+outer 10: max_change=0.002465
+outer 15: max_change=0.000009
+outer 20: max_change=0.000000
+converged at outer=22, max_change=8.49e-08
+Solved in 161.5s. F[0,0] = 0.5571 (exact win probability for whoever rolls first, race to 4000)
+
+Solving single-turn EV-maximizing policy (for comparison baselines)...
+=== Part 1: exact F[i,j] vs direct Monte Carlo (race-aware vs race-aware) ===
+  (x=    0, y=    0): exact F=0.5571   MC estimate=0.5590  (N=10000, 95% CI ~±0.0098)
+  (x= 2000, y=    0): exact F=0.9071   MC estimate=0.9078  (N=10000, 95% CI ~±0.0098)
+  (x=    0, y= 2000): exact F=0.1606   MC estimate=0.1592  (N=10000, 95% CI ~±0.0098)
+  (x= 3500, y=    0): exact F=0.9951   MC estimate=0.9948  (N=10000, 95% CI ~±0.0098)
+  (x= 1000, y= 1500): exact F=0.4483   MC estimate=0.4542  (N=10000, 95% CI ~±0.0098)
+  (x= 3000, y= 3500): exact F=0.4483   MC estimate=0.4467  (N=10000, 95% CI ~±0.0098)
+
+=== Part 2: race-aware exact vs turn-EV-max baselines (seat-order balanced) ===
+  race-aware-exact vs (a) pure turn-EV-max (race-blind)      -> race-aware wins 53.4% | other wins 46.6%
+  race-aware-exact vs (b) turn-EV-max + endgame-stop patch   -> race-aware wins 52.6% | other wins 47.4%
+
+=== Part 3: race-aware thresholds vs fixed single-player thresholds ===
+Fixed single-player thresholds (score-blind): {1: 250, 2: 200, 3: 400, 4: 1000, 5: 3350, 6: 12900}
+scenario                                  k=1      k=2      k=3      k=4      k=5      k=6      
+tied, early (x=0,y=0)                     250      200      400      950      2100     3100     
+far behind (x=0, y=3000)                  800      600      3950     3950     3950     3950     
+far ahead (x=3000, y=0)                   150      150      250      950      950      950      
+both near finish, tied (x=3500,y=3500)    450      450      450      450      450      450      
+behind near finish (x=3000,y=3900)        950      950      950      950      950      950      
+ahead near finish (x=3900,y=3000)         50       50       50       50       50       50       
+
+(F matrix pickled to race_solution.pkl; U_all not pickled, size ~25MB but trivially recomputable)
