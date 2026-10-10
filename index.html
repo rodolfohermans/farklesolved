@@ -96,7 +96,7 @@
   .banner.lose{background:rgba(165,54,42,0.25); color:#e8928a;}
   .hint{font-size:0.82rem; color:var(--accent3); margin-top:6px;}
   .muted{color:var(--muted); font-size:0.85rem;}
-  #game{display:none;}
+  #controls .idle-hint{color:var(--muted); font-size:0.9rem;}
 
   .table-scene{
     position:relative; overflow:hidden;
@@ -138,16 +138,10 @@
   <h1>Kingdom Come: Deliverance — Dice Practice Table</h1>
   <p class="sub">Play against an opponent of your choosing — tavern regulars from the razor-sharp Scholar to the reckless Drunkard, each with their own way of playing. At the end of every one of your turns, each decision you made is graded against the exact optimal-stopping solution from the strategy report — not just whether you won the turn, but whether each call was the right one given what you knew.</p>
 
-  <div class="card" id="setup">
-    <div style="text-align:center;">
-      <button id="startBtn" style="font-size:0.85rem; padding:16px 32px;">Start match</button>
-      <p class="muted" style="margin-top:10px;">Race to 4,000 against the Jester, who plays a different tavern regular's style every turn. Want to pick someone specific? See below.</p>
-    </div>
-
-    <details style="margin-top:18px;">
-      <summary style="cursor:pointer; font-size:0.78rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">Choose your opponent (optional)</summary>
-      <div style="margin-top:14px;">
-        <label>Match target (realistic range — see the report's research on real KCD targets)</label>
+  <div class="card" id="matchSettings">
+    <div style="display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end;">
+      <div style="flex:1 1 200px; min-width:180px;">
+        <label style="margin-top:0;">Match target</label>
         <select id="targetSelect">
           <option value="1500">1,500 — low stakes</option>
           <option value="2000">2,000 — commonly-cited default</option>
@@ -156,8 +150,10 @@
           <option value="custom">Custom…</option>
         </select>
         <input type="number" id="customTarget" min="300" step="50" value="4000" style="display:none; margin-top:8px;">
+      </div>
 
-        <label>Opponent</label>
+      <div style="flex:2 1 260px; min-width:220px;">
+        <label style="margin-top:0;">Opponent</label>
         <select id="oppSelect">
           <option value="random" selected>The Jester — a different tavern regular's style every turn</option>
           <option value="optimal">The Scholar — plays the mathematically optimal strategy, every time</option>
@@ -166,15 +162,21 @@
           <option value="stop2">The Drunkard — keeps rolling until he's down to 1 die, rarely knowing when to quit</option>
           <option value="firstscore">The Priest — banks the instant he scores and calls it a night</option>
         </select>
+      </div>
 
-        <label>Dice style</label>
+      <div style="flex:1 1 150px; min-width:140px;">
+        <label style="margin-top:0;">Dice style</label>
         <select id="diceStyleSelect">
           <option value="realistic" selected>Realistic</option>
           <option value="pixel">Pixel art</option>
         </select>
       </div>
-    </details>
-    <p class="muted" style="margin-top:14px;">You always roll first. Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome — busting after a correct "push" call is still correct play.</p>
+
+      <div style="flex:0 0 auto;">
+        <button id="startBtn" style="font-size:0.78rem; padding:12px 22px;">Start match</button>
+      </div>
+    </div>
+    <p class="muted" id="settingsHint" style="margin-top:14px;">You always roll first. Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome — busting after a correct "push" call is still correct play. You can change the target or opponent at any time here — if a match is in progress, that resets it.</p>
   </div>
 
   <div id="game">
@@ -474,12 +476,7 @@ function playOpponentTurn(strategy){
 let state = null;
 
 function startMatch(){
-  const targetSel = document.getElementById('targetSelect').value;
-  const target = targetSel === 'custom'
-    ? Math.max(300, Math.round(Number(document.getElementById('customTarget').value)/50)*50)
-    : Number(targetSel);
-  const oppStrategy = document.getElementById('oppSelect').value;
-  const diceStyle = document.getElementById('diceStyleSelect').value;
+  const {target, oppStrategy, diceStyle} = readSettingsFromControls();
   state = {
     target, oppStrategy, diceStyle,
     scores: {player:0, opponent:0},
@@ -489,14 +486,83 @@ function startMatch(){
     decisions: [], // this turn's recorded player decisions
     gameOver: false,
   };
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('game').style.display = 'block';
   document.getElementById('reviewArea').innerHTML = '';
   document.getElementById('bannerArea').innerHTML = '';
   document.getElementById('targetLine').textContent = `Race to ${target} points`;
   document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
+  document.getElementById('startBtn').textContent = 'Restart match';
   beginPlayerRoll_UI();
   render();
+}
+
+function isGameActive(){
+  return state !== null && !state.gameOver;
+}
+
+function readSettingsFromControls(){
+  const targetSel = document.getElementById('targetSelect').value;
+  const target = targetSel === 'custom'
+    ? Math.max(300, Math.round(Number(document.getElementById('customTarget').value)/50)*50)
+    : Number(targetSel);
+  return {
+    target,
+    oppStrategy: document.getElementById('oppSelect').value,
+    diceStyle: document.getElementById('diceStyleSelect').value,
+  };
+}
+
+function syncControlsFromState(){
+  if (!state) return;
+  const targetSelect = document.getElementById('targetSelect');
+  const presetValues = Array.from(targetSelect.options).map(o => o.value).filter(v => v !== 'custom');
+  if (presetValues.includes(String(state.target))){
+    targetSelect.value = String(state.target);
+    document.getElementById('customTarget').style.display = 'none';
+  } else {
+    targetSelect.value = 'custom';
+    document.getElementById('customTarget').value = state.target;
+    document.getElementById('customTarget').style.display = 'block';
+  }
+  document.getElementById('oppSelect').value = state.oppStrategy;
+  document.getElementById('diceStyleSelect').value = state.diceStyle;
+}
+
+function renderIdle(){
+  const {target, oppStrategy} = readSettingsFromControls();
+  document.getElementById('playerScore').textContent = 0;
+  document.getElementById('oppScore').textContent = 0;
+  document.getElementById('playerTargetVal').textContent = target;
+  document.getElementById('oppTargetVal').textContent = target;
+  document.getElementById('playerRound').textContent = 0;
+  document.getElementById('oppRound').textContent = 0;
+  document.getElementById('playerSelected').textContent = 0;
+  document.getElementById('oppSelected').textContent = 0;
+  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
+  document.getElementById('targetLine').textContent = `Race to ${target} points`;
+  document.getElementById('diceRow').innerHTML = '';
+  setCupsRollable(false);
+  document.getElementById('diceLeft').textContent = 6;
+  document.getElementById('turnTotal').textContent = 0;
+  document.getElementById('turnWho').textContent = 'Press "Start match" above to begin';
+  document.getElementById('controls').innerHTML = '';
+  document.getElementById('endgameHint').style.display = 'none';
+  document.getElementById('turnLog').innerHTML = '';
+  document.getElementById('reviewArea').innerHTML = '';
+  document.getElementById('bannerArea').innerHTML = '';
+}
+
+// Changing target/opponent/dice-style mid-match resets the match; confirm first.
+function onSettingControlChanged(){
+  if (isGameActive()){
+    const ok = confirm('Changing this will reset the current match. Continue?');
+    if (!ok){
+      syncControlsFromState();
+      return;
+    }
+    startMatch();
+  } else {
+    renderIdle();
+  }
 }
 
 function render(){
@@ -921,14 +987,24 @@ function showReview(){
 }
 
 /* ============================== WIRING ============================== */
+function handleStartButtonClick(){
+  if (isGameActive()){
+    const ok = confirm('Starting a new match will reset the current match. Continue?');
+    if (!ok) return;
+  }
+  startMatch();
+}
 document.getElementById('targetSelect').addEventListener('change', (e) => {
   document.getElementById('customTarget').style.display = e.target.value === 'custom' ? 'block' : 'none';
+  onSettingControlChanged();
 });
-document.getElementById('startBtn').addEventListener('click', startMatch);
-document.getElementById('newMatchBtn').addEventListener('click', () => {
-  document.getElementById('game').style.display = 'none';
-  document.getElementById('setup').style.display = 'block';
-});
+document.getElementById('customTarget').addEventListener('change', onSettingControlChanged);
+document.getElementById('oppSelect').addEventListener('change', onSettingControlChanged);
+document.getElementById('diceStyleSelect').addEventListener('change', onSettingControlChanged);
+document.getElementById('startBtn').addEventListener('click', handleStartButtonClick);
+document.getElementById('newMatchBtn').addEventListener('click', handleStartButtonClick);
+
+renderIdle();
 </script>
 </body>
 </html>
