@@ -38,4 +38,4 @@ just test    # Playwright smoke test across every page, desktop + mobile viewpor
 
 ## License
 
-No license has been chosen yet for this repository. The source is public for anyone to read, verify, or challenge the math, but no reuse rights are granted. Ask if you want to use any of it.
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/): free to share and adapt with attribution, for non-commercial use only. Not authorized for commercial use or resale.
