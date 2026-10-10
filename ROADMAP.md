@@ -1,4 +1,4 @@
-# Farkle / farklesolved.com — Development Roadmap
+# Farkle / farklesolved.com: Development Roadmap
 
 Everything raised across recent sessions, plus the full adversarial audit (independently
 re-derived math, live network capture, source review), organized into phases with real
@@ -7,10 +7,10 @@ dependencies, not a flat backlog. Nothing below is started. Re-derive actual sta
 
 ## Dependency overview
 
-- **Tier 1 — no dependencies, start anytime:** Phase 0, Phase 1, Phase 1b, Phase 2, Phase 8
-- **Tier 2 — depends on Tier 1:** Phase 3 (needs 1, 2), Phase 4, Phase 5 (needs 2)
-- **Tier 3 — depends on Tier 2:** Phase 4b (needs 4, deferred), Phase 6 (needs 5)
-- **Independent track:** Phase 7 (Spanish version) — no hard dependency on the above, but see
+- **Tier 1 (no dependencies, start anytime):** Phase 0, Phase 1, Phase 1b, Phase 2, Phase 8
+- **Tier 2 (depends on Tier 1):** Phase 3 (needs 1, 2), Phase 4, Phase 5 (needs 2)
+- **Tier 3 (depends on Tier 2):** Phase 4b (needs 4, deferred), Phase 6 (needs 5)
+- **Independent track:** Phase 7 (Spanish version), no hard dependency on the above, but see
   Phase 1b's note on Phase 7 part 1's rework
 
 Phase 1b doesn't block anything else technically (every other phase can proceed with the
@@ -21,7 +21,7 @@ formally depends on it.
 
 ---
 
-## Phase 0 — Correctness & honesty fixes
+## Phase 0: Correctness & honesty fixes
 
 **Depends on:** nothing. **Why first:** cheap, independent, and this project's entire premise
 is exactness.
@@ -34,30 +34,29 @@ of these need a design decision; they're direct edits.
    grading already has at `winningAction` (~line 906), instead of pure race-blind
    `bestAction`.
 2. **End-game-zone copy contradicts the project's own exact table**: rewrite flowchart step 5
-   and `#endgameHint` (~line 580) to match what the cheat sheet already states correctly —
+   and `#endgameHint` (~line 580) to match what the cheat sheet already states correctly:
    bank early only when ahead with 1-3 dice left, never bank short otherwise.
 3. **"Scholar" description overclaims** ("plays the mathematically optimal strategy, every
-   time") — it's the race-blind policy, which loses ~5.6 points of win rate to the true
+   time"): it's the race-blind policy, which loses ~5.6 points of win rate to the true
    optimum per the report's own numbers. Reword to something accurate.
 4. **`about.html` factual error**: the "only external references are Wikipedia, Ko-fi,
-   GitHub" line omits that page's own links to priva-c.org and 512kb.club — fix inside the
+   GitHub" line omits that page's own links to priva-c.org and 512kb.club. Fix inside the
    section whose entire point is precision.
 5. **`index.html` title overclaim**: retitle from bare "Farkle, Solved" to something scoped,
    e.g. "KCD Dice, Solved".
 6. **Stale 55.90% headline figure** in the report, superseded by the N=50,000 rerun directly
-   below it — reconcile.
+   below it, reconcile.
 7. **Two "verified against X" sentences citing artifacts not in the repo** (the 1e-9/1e-11
-   reimplementation claim; the G=2,000 re-solve) — commit the artifacts or drop the
+   reimplementation claim; the G=2,000 re-solve), commit the artifacts or drop the
    sentences.
-8. **Duplicate "commonly-cited default"** on both the 2,000 and 4,000 target options —
-   remove, word each option on its own terms.
-9. **Stale `test_play_dice.py`** queries UI that no longer exists and always times out — fix
+8. **Duplicate "commonly-cited default"** on both the 2,000 and 4,000 target options: remove, word each option on its own terms.
+9. **Stale `test_play_dice.py`** queries UI that no longer exists and always times out: fix
    or delete, remove the matching dead `.actions` CSS.
 10. **Academic grounding for the "solved" claim**: cite Allis (1994), *Searching for
     Solutions in Games and Artificial Intelligence*, for the solved-game taxonomy (this is a
     *strongly* solved game in that framing), and state the two-player-only scope explicitly
     rather than relying on it being merely never contradicted.
-11. **First-mover-advantage tooltip** on "You always roll first" — pull the actual number
+11. **First-mover-advantage tooltip** on "You always roll first": pull the actual number
     from the existing race-simulation data, don't estimate fresh.
 12. **Smaller hygiene items**:
     - Vestigial `farkle_dp.T_MAX` override lines across several `.py` files (no-ops)
@@ -72,7 +71,7 @@ of these need a design decision; they're direct edits.
 
 ---
 
-## Phase 1 — Rules-as-implemented reference
+## Phase 1: Rules-as-implemented reference
 
 **Depends on:** nothing. **Unlocks:** Phase 3's analysis panel.
 
@@ -88,12 +87,12 @@ drifting apart.
   the exact bust definition; the hot-dice/re-roll-all-six rule with a worked example.
 - Add as an expandable section on the existing About card (matches the "Customize match"
   disclosure pattern already in use), not a separate page.
-- Don't restate the race-blind/race-aware endgame caveat in detail here — footnote to the
+- Don't restate the race-blind/race-aware endgame caveat in detail here: footnote to the
   strategy report instead, to avoid the two documents drifting apart.
 
 ---
 
-## Phase 1b — Build system and asset architecture
+## Phase 1b: Build system and asset architecture
 
 **Depends on:** nothing. **Why now:** three separate problems converged on the same root
 cause this session (a corrupted line from a heredoc-quoting bug while hand-editing a 1.1MB
@@ -140,12 +139,12 @@ session; this is about replacing the stopgap, not adding new capability.
 
 **Sequencing note:** do not start this concurrently with other in-flight edits to the HTML
 files, for the same reason the dice-compression work earlier this session was carefully
-staged around a running background workflow — a structural refactor racing against other
+staged around a running background workflow. A structural refactor racing against other
 edits to the same files is how things get corrupted.
 
 ---
 
-## Phase 2 — Pick one dice style
+## Phase 2: Pick one dice style
 
 **Depends on:** nothing. **Unlocks:** simpler Phase 3 rendering, Phase 5 weight savings.
 
@@ -156,7 +155,7 @@ twice.
 **How:**
 - A judgment call on visual direction, not a technical one.
 - Once decided: remove the losing sprite set from the shipped page entirely (not just hide
-  the selector) — this is also one of Phase 5's concrete weight-reduction levers.
+  the selector), this is also one of Phase 5's concrete weight-reduction levers.
 
 **Decision (2026-10-10): Realistic, provisional ("for now").** The case was presented with
 real measured numbers rather than impressions: the realistic set is ~381KB raw versus the
@@ -170,7 +169,7 @@ explicitly revisitable if page weight becomes a real problem later.
 
 ---
 
-## Phase 3 — Opponent experience overhaul
+## Phase 3: Opponent experience overhaul
 
 **Depends on:** Phase 1 (terminology), benefits from Phase 2. **Status:** fully planned, zero
 code written.
@@ -178,30 +177,30 @@ code written.
 Opponent turns currently resolve instantly as a text log. The goal: watch the opponent
 actually play, paced like a real turn, graded the same way the player is.
 
-- **3a — Extract the review renderer.** Pull `showReview()`'s body into a parameterized
+- **3a: Extract the review renderer.** Pull `showReview()`'s body into a parameterized
   `renderReview(decisions, preTurnScore, target, opts)`; keep a thin wrapper for the player
   so nothing visibly changes yet. Verify against current screenshots before moving on.
-- **3b — Make the opponent's turn structured and analyzed (no animation yet).** Convert
+- **3b: Make the opponent's turn structured and analyzed (no animation yet).** Convert
   `playOpponentTurn` to async, capture the same `decisions` shape the player already produces
   (it already computes every field, just discards them into a text log), call
   `renderReview(...)` after the turn with the opponent's label swapped in. Highest-value
-  single increment — shippable on its own even if animation never happens.
-- **3c — Animate it.** Add `renderDice(dice, false)` calls plus `await sleep(~3000ms)`
+  single increment, shippable on its own even if animation never happens.
+- **3c: Animate it.** Add `renderDice(dice, false)` calls plus `await sleep(~3000ms)`
   between roll, decision reveal, and bank/continue, fully automatic, no click required to
   advance. Add a persistent Skip control (and remember the choice) for anyone who'd rather
   not watch. Guard with a single `turnInProgress` flag so a stray click can't double-run a
   turn.
-- **3d — Depth cue.** Render the opponent's dice smaller and higher in the scene than the
+- **3d: Depth cue.** Render the opponent's dice smaller and higher in the scene than the
   player's, closer to the opponent's body, reinforcing the near/far framing the scorecards
   already imply.
-- **3e — Grouped banked-dice display, for both sides.** Below the table image, show this
-  turn's banked dice grouped by scoring choice with each group's point value — a 1-2-3-4-5
+- **3e: Grouped banked-dice display, for both sides.** Below the table image, show this
+  turn's banked dice grouped by scoring choice with each group's point value: a 1-2-3-4-5
   straight is one group labeled "+500"; a lone 1 and a lone 5 are two separate groups, "+100"
   and "+50", never merged. Reuses the same decomposition `enumerateActions` already computes.
 
 ---
 
-## Phase 4 — Separate background from character art
+## Phase 4: Separate background from character art
 
 **Depends on:** nothing. **Unlocks:** Phase 4b.
 
@@ -214,12 +213,12 @@ layer is what makes per-opponent art viable at all.
 - One transparent-background character portrait per opponent, composited as a separate
   layered element (same flood-fill transparency technique already used for the dice cup).
 - Reference assets already on disk for this: `..._Backgound.jpeg` (background only),
-  `..._soldier-only.jpeg`, `..._priest.jpeg` — may need the same transparency cleanup pass if
+  `..._soldier-only.jpeg`, `..._priest.jpeg`. May need the same transparency cleanup pass if
   their edges aren't already clean.
 
 ---
 
-## Phase 4b — Per-opponent character art
+## Phase 4b: Per-opponent character art
 
 **Depends on:** Phase 4. **Status:** explicitly "not now."
 
@@ -228,12 +227,12 @@ own portrait instead of sharing one soldier image.
 
 **How:** map the already-available portraits to their matching personas. All six are now on
 disk and ready to use, nothing left to source:
-- `Downloads/Scholar.png` — The Scholar
-- `Downloads/Drunk.png` — The Drunkard
-- `Downloads/Jester.png` — The Jester
-- `Downloads/QuarterMaster.png` — The Quartermaster
-- `..._priest.jpeg` — The Priest
-- `..._soldier-only.jpeg` — generic/fallback, or The Watchman
+- `Downloads/Scholar.png`: The Scholar
+- `Downloads/Drunk.png`: The Drunkard
+- `Downloads/Jester.png`: The Jester
+- `Downloads/QuarterMaster.png`: The Quartermaster
+- `..._priest.jpeg`: The Priest
+- `..._soldier-only.jpeg`: generic/fallback, or The Watchman
 
 All six available portraits already have clean transparent backgrounds, so no flood-fill
 cleanup pass is needed for those (unlike the background-only and soldier-only assets noted in
@@ -242,11 +241,11 @@ background/character split stands between this and being implemented.
 
 ---
 
-## Phase 5 — Page-weight optimization
+## Phase 5: Page-weight optimization
 
 **Depends on:** Phase 2, for one specific lever. **Current state:** 1.1MB+ per page.
 
-Attack the actual thing making the page heavy — embedded art and font — not generic page
+Attack the actual thing making the page heavy: embedded art and font, not generic page
 bloat.
 
 **How:**
@@ -254,7 +253,7 @@ bloat.
   dropping the unused pixel-art set alone removes ~147KB raw, ~13% of the current page
   weight, the single biggest lever here, now that Phase 2 has actually been decided.
 - Re-compress the largest embedded images, starting with the realistic dice set itself
-  (~381KB raw, 44.5% of the page) and the background scene — realistic's photographic
+  (~381KB raw, 44.5% of the page) and the background scene: realistic's photographic
   shading and the AI-generated background are the more compressible assets, versus
   pixel-art's already-flat colors which compress less.
 - Subset the embedded pixel font to the glyphs actually used instead of the full character
@@ -263,7 +262,7 @@ bloat.
 
 ---
 
-## Phase 6 — 512KB Club branch
+## Phase 6: 512KB Club branch
 
 **Depends on:** Phase 5's techniques. **Scope:** separate branch, not main.
 
@@ -278,11 +277,11 @@ background), not just the tuning Phase 5 does for the live site.
 
 ---
 
-## Phase 7 — Spanish version
+## Phase 7: Spanish version
 
 **Depends on:** nothing outside itself. **Internal order:** architecture before content.
 
-A full translation, not a machine-translate widget — that would reintroduce a third-party
+A full translation, not a machine-translate widget: that would reintroduce a third-party
 script, which conflicts with the privacy commitment.
 
 **How:**
@@ -296,7 +295,7 @@ script, which conflicts with the privacy commitment.
 
 ---
 
-## Phase 8 — Cross-device & browser testing practice
+## Phase 8: Cross-device & browser testing practice
 
 **Depends on:** nothing. **Why early:** this exact gap already caused a real mobile bug.
 
