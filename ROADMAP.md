@@ -450,3 +450,27 @@ Evaluating a hosted cross-browser service is left for whenever Firefox/WebKit te
 actually needed locally and isn't available. Every phase of this session's work (Phase 2
 through Phase 4b) was checked this same way manually before this script existed; it now
 codifies that practice as a real, repeatable command instead of ad hoc one-off scripts.
+
+---
+
+## Phase 9: Unicode die-face glyphs in the log text
+
+This was requested early in the session that produced this roadmap ("replace the text that
+says 'You roll [2, 5, 1, 2, 1, 5]' with Unicode die-face glyphs") but got dropped when
+everything was consolidated into phases here: it never made it into any phase above, so it
+sat unimplemented until the user noticed the game still showed bracketed numbers and asked
+directly. Recorded here now specifically so a dropped item is visible and traceable instead
+of silently vanishing a second time.
+
+**Implemented (2026-10-10):** `DIE_GLYPH` (U+2680-U+2685, the standard Unicode die-face block)
+and a `diceGlyphs(dice)` helper, in both languages. Replaces the bracketed-number roll display
+in all three places it appeared (the player's own roll, the opponent's per-decision roll
+during Phase 3's animation, and the opponent's bust roll). Verified the glyphs actually render
+as proper pip patterns in this environment (not a placeholder box) by rendering them at a
+large test size first, since the log text's small font size made that hard to confirm directly
+from the in-game screenshot. Also removed a related piece of dead code found in the process:
+`playOpponentTurn`'s internal `log` array was built and returned but never actually read by
+any caller once Phase 3's animation started building its own log lines directly; removed
+rather than left as silent dead weight.
+
+---

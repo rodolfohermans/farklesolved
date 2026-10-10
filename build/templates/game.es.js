@@ -198,6 +198,9 @@ function rollDice(k){
   return out;
 }
 
+const DIE_GLYPH = {1:'⚀', 2:'⚁', 3:'⚂', 4:'⚃', 5:'⚄', 6:'⚅'};
+function diceGlyphs(dice){ return dice.map(d => DIE_GLYPH[d]).join(' '); }
+
 function bestAction(k, T, actions){
   let best = null, bestV = -1;
   for (const a of actions){
@@ -209,20 +212,17 @@ function bestAction(k, T, actions){
 }
 
 /* ============================== OPPONENT POLICIES ============================== */
-// Each policy plays one full turn and returns points banked (0 if bust), plus a log array.
+// Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
   let k = 6, T = 0;
-  const log = [];
   const decisions = [];
   const oppPreTurnScore = state.scores.opponent;
   while (true){
     const kBefore = k, TBefore = T;
     const dice = rollDice(k);
     const {isBust, actions} = enumerateActions(dice);
-    log.push(`tiró [${dice.join(', ')}]`);
     if (isBust){
-      log.push(`SE PASÓ: pierde ${T} puntos guardados este turno`);
-      return {points: 0, log, decisions, bustDice: dice};
+      return {points: 0, decisions, bustDice: dice};
     }
     let chosen, cont;
     if (strategy === 'optimal'){
@@ -270,10 +270,8 @@ function playOpponentTurn(strategy){
       cont = false;
     }
     decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T});
-    log.push(`guarda ${chosen.label} (+${chosen.val}) → ${k} dados restantes, total del turno ${T}`);
     if (!cont){
-      log.push(`guarda el turno: +${T} puntos`);
-      return {points: T, log, decisions};
+      return {points: T, decisions};
     }
   }
 }
@@ -496,7 +494,7 @@ function doPlayerRoll(){
   const dice = rollDice(state.k);
   state.currentDice = dice;
   state.selectedSet = new Set();
-  logLine(`Tiras [${dice.join(', ')}]`);
+  logLine(`Tiras ${diceGlyphs(dice)}`);
   const {isBust, actions} = enumerateActions(dice);
   if (isBust){
     renderDice(dice, false);
@@ -672,11 +670,11 @@ async function runOpponentTurn(){
     ? REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)]
     : state.oppStrategy;
   if (state.oppStrategy === 'random') logLine(`Esta noche el Bufón juega como ${CHARACTER_NAME[strategy]}.`);
-  const {points, log, decisions, bustDice} = playOpponentTurn(strategy);
+  const {points, decisions, bustDice} = playOpponentTurn(strategy);
 
   for (const d of decisions){
     renderDice(d.dice, false);
-    logLine(`El oponente tiró [${d.dice.join(', ')}]`);
+    logLine(`El oponente tiró ${diceGlyphs(d.dice)}`);
     await pace();
     logLine(`El oponente guarda ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dados restantes, total del turno ${d.resultingT}`);
     state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
@@ -685,7 +683,7 @@ async function runOpponentTurn(){
   }
   if (bustDice){
     renderDice(bustDice, false);
-    logLine(`El oponente tiró [${bustDice.join(', ')}]`);
+    logLine(`El oponente tiró ${diceGlyphs(bustDice)}`);
     await pace();
   }
   if (points > 0){

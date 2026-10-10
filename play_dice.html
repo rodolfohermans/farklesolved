@@ -550,6 +550,9 @@ function rollDice(k){
   return out;
 }
 
+const DIE_GLYPH = {1:'⚀', 2:'⚁', 3:'⚂', 4:'⚃', 5:'⚄', 6:'⚅'};
+function diceGlyphs(dice){ return dice.map(d => DIE_GLYPH[d]).join(' '); }
+
 function bestAction(k, T, actions){
   let best = null, bestV = -1;
   for (const a of actions){
@@ -561,20 +564,17 @@ function bestAction(k, T, actions){
 }
 
 /* ============================== OPPONENT POLICIES ============================== */
-// Each policy plays one full turn and returns points banked (0 if bust), plus a log array.
+// Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
   let k = 6, T = 0;
-  const log = [];
   const decisions = [];
   const oppPreTurnScore = state.scores.opponent;
   while (true){
     const kBefore = k, TBefore = T;
     const dice = rollDice(k);
     const {isBust, actions} = enumerateActions(dice);
-    log.push(`rolled [${dice.join(', ')}]`);
     if (isBust){
-      log.push(`BUST: loses ${T} pts banked this turn`);
-      return {points: 0, log, decisions, bustDice: dice};
+      return {points: 0, decisions, bustDice: dice};
     }
     let chosen, cont;
     if (strategy === 'optimal'){
@@ -622,10 +622,8 @@ function playOpponentTurn(strategy){
       cont = false;
     }
     decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T});
-    log.push(`banks ${chosen.label} (+${chosen.val}) → ${k} dice left, turn total ${T}`);
     if (!cont){
-      log.push(`banks the turn: +${T} pts`);
-      return {points: T, log, decisions};
+      return {points: T, decisions};
     }
   }
 }
@@ -855,7 +853,7 @@ function doPlayerRoll(){
   const dice = rollDice(state.k);
   state.currentDice = dice;
   state.selectedSet = new Set();
-  logLine(`You roll [${dice.join(', ')}]`);
+  logLine(`You roll ${diceGlyphs(dice)}`);
   const {isBust, actions} = enumerateActions(dice);
   if (isBust){
     renderDice(dice, false);
@@ -1031,11 +1029,11 @@ async function runOpponentTurn(){
     ? REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)]
     : state.oppStrategy;
   if (state.oppStrategy === 'random') logLine(`Tonight the Jester plays like ${CHARACTER_NAME[strategy]}.`);
-  const {points, log, decisions, bustDice} = playOpponentTurn(strategy);
+  const {points, decisions, bustDice} = playOpponentTurn(strategy);
 
   for (const d of decisions){
     renderDice(d.dice, false);
-    logLine(`Opponent rolled [${d.dice.join(', ')}]`);
+    logLine(`Opponent rolled ${diceGlyphs(d.dice)}`);
     await pace();
     logLine(`Opponent banks ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dice left, turn total ${d.resultingT}`);
     state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
@@ -1044,7 +1042,7 @@ async function runOpponentTurn(){
   }
   if (bustDice){
     renderDice(bustDice, false);
-    logLine(`Opponent rolled [${bustDice.join(', ')}]`);
+    logLine(`Opponent rolled ${diceGlyphs(bustDice)}`);
     await pace();
   }
   if (points > 0){
