@@ -89,6 +89,7 @@
   .banner.lose{background:rgba(165,54,42,0.25); color:#e8928a;}
   .hint{font-size:0.82rem; color:var(--accent3); margin-top:6px;}
   .muted{color:var(--muted); font-size:0.85rem;}
+  .term{border-bottom:1px dotted var(--muted); cursor:help;}
   #controls .idle-hint{color:var(--muted); font-size:0.9rem;}
 
   .table-scene{
@@ -172,7 +173,7 @@
         <button id="startBtn" style="font-size:0.78rem; padding:12px 22px;">Empezar partida</button>
       </div>
     </div>
-    <p class="muted" id="settingsHint" style="margin-top:14px;">Tú siempre tiras primero. El consejo usa la tabla exacta de parada óptima para una sola tirada (idéntica a la del informe de estrategia); evalúa la calidad de cada decisión, no el resultado: fallar después de una decisión correcta de "seguir" sigue siendo jugar bien. Puedes cambiar el objetivo o el oponente aquí en cualquier momento; si hay una partida en curso, eso la reinicia.</p>
+    <p class="muted" id="settingsHint" style="margin-top:14px;"><span class="term" title="Con un objetivo de 4.000 puntos, quien tira primero gana el 55,71% de las partidas entre dos jugadores igual de buenos jugando de forma óptima, frente al 44,29% de quien tira en segundo lugar. Son 5,7 puntos porcentuales por encima de un reparto equitativo, según el programa dinámico de resolución exacta de la carrera de este proyecto, F(0,0) (ver el informe de estrategia).">Tú siempre tiras primero.</span> El consejo usa la tabla exacta de parada óptima para una sola tirada (idéntica a la del informe de estrategia); evalúa la calidad de cada decisión, no el resultado: fallar después de una decisión correcta de "seguir" sigue siendo jugar bien. Puedes cambiar el objetivo o el oponente aquí en cualquier momento; si hay una partida en curso, eso la reinicia.</p>
   </div>
 
   <div id="game">

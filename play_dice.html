@@ -89,6 +89,7 @@
   .banner.lose{background:rgba(165,54,42,0.25); color:#e8928a;}
   .hint{font-size:0.82rem; color:var(--accent3); margin-top:6px;}
   .muted{color:var(--muted); font-size:0.85rem;}
+  .term{border-bottom:1px dotted var(--muted); cursor:help;}
   #controls .idle-hint{color:var(--muted); font-size:0.9rem;}
 
   .table-scene{
@@ -172,7 +173,7 @@
         <button id="startBtn" style="font-size:0.78rem; padding:12px 22px;">Start match</button>
       </div>
     </div>
-    <p class="muted" id="settingsHint" style="margin-top:14px;">You always roll first. Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome — busting after a correct "push" call is still correct play. You can change the target or opponent at any time here — if a match is in progress, that resets it.</p>
+    <p class="muted" id="settingsHint" style="margin-top:14px;"><span class="term" title="At a 4,000-point target, the player who rolls first wins 55.71% of games between two equally-skilled, optimally-played sides, versus 44.29% for whoever goes second. That is 5.7 percentage points above an even split, from this project's exact race-solution dynamic program F(0,0) (see the strategy report).">You always roll first.</span> Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome — busting after a correct "push" call is still correct play. You can change the target or opponent at any time here — if a match is in progress, that resets it.</p>
   </div>
 
   <div id="game">
