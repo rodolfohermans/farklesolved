@@ -1,0 +1,38 @@
+[
+  {
+    "template": "en",
+    "output": "play_dice.html",
+    "title": "KCD Dice: Practice Table",
+    "meta_description": "A free practice table for the Kingdom Come: Deliverance / Farkle dice game against a selectable opponent, with turn-by-turn coaching graded against an exact dynamic-programming solution.",
+    "es_href": "play_dice.es.html",
+    "en_href": "play_dice.html",
+    "sibling_href": "play_dice.es.html"
+  },
+  {
+    "template": "en",
+    "output": "index.html",
+    "title": "KCD Dice, Solved",
+    "meta_description": "Play the Kingdom Come: Deliverance / Farkle dice game against a selectable opponent, with turn-by-turn coaching graded against an exact dynamic-programming solution.",
+    "es_href": "index.es.html",
+    "en_href": "index.html",
+    "sibling_href": "index.es.html"
+  },
+  {
+    "template": "es",
+    "output": "play_dice.es.html",
+    "title": "Dados KCD: Mesa de práctica",
+    "meta_description": "Una mesa de práctica gratuita para el juego de dados de Kingdom Come: Deliverance / Farkle contra un oponente a elegir, con consejos en cada turno evaluados contra una solución exacta de programación dinámica.",
+    "es_href": "play_dice.es.html",
+    "en_href": "play_dice.html",
+    "sibling_href": "play_dice.html"
+  },
+  {
+    "template": "es",
+    "output": "index.es.html",
+    "title": "Dados KCD, Resueltos",
+    "meta_description": "Juega al dado de Kingdom Come: Deliverance / Farkle contra un oponente a elegir, con consejos en cada turno evaluados contra una solución exacta de programación dinámica.",
+    "es_href": "index.es.html",
+    "en_href": "index.html",
+    "sibling_href": "index.html"
+  }
+]

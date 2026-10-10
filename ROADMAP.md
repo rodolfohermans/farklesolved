@@ -142,6 +142,24 @@ files, for the same reason the dice-compression work earlier this session was ca
 staged around a running background workflow. A structural refactor racing against other
 edits to the same files is how things get corrupted.
 
+**Implemented (2026-10-10):** the asset-extraction and build-script core of this phase.
+Real files now exist under `assets/` (`dice/{face}_{variant}.png` ×24, `background.jpg`,
+`pixelfont.woff2`, `dp-data.json`) and `build/templates/` (`template.en.html`,
+`template.es.html`, `game.en.js`, `game.es.js`), plus `build/pages.json` and `build/build.py`.
+`just build` assembles the 4 shipped pages from these; verified byte-identical to the
+pre-refactor committed files, and re-verified via Playwright (dice render, zero JS errors,
+zero external requests) after the switch. Decision made per the roadmap's own lean: built
+HTML is committed (single `just build` command, no CI needed for a solo static site), not
+built on push.
+
+**Deferred, not yet done:** the language-string unification this phase's "How" section also
+called for (`game.en.js`/`game.es.js` are still two separate ~32KB files, not one `game.js`
+plus a `strings.en.json`/`strings.es.json` pair): the two files differ by only ~400 bytes of
+translated text, so this is tractable later but wasn't done now to keep this change a pure,
+verifiably-safe refactor rather than risk the text-extraction introducing a subtle bug.
+`about.html`/`about.es.html` are also not yet templated (still hand-duplicated as before);
+smaller and lower-risk than the game pages, worth folding in later.
+
 ---
 
 ## Phase 2: Pick one dice style
