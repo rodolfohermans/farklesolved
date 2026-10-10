@@ -220,6 +220,28 @@ actually play, paced like a real turn, graded the same way the player is.
   straight is one group labeled "+500"; a lone 1 and a lone 5 are two separate groups, "+100"
   and "+50", never merged. Reuses the same decomposition `enumerateActions` already computes.
 
+**Implemented (2026-10-10), all five sub-phases:** `showReview()` became a thin wrapper
+around a parameterized `renderReview(decisions, preTurnScore, otherScore, target, subj)`,
+`subj` supplying the English/Spanish pronoun and verb forms so the identical grading logic
+produces correct text for either side ("you chose" vs "the opponent chose"; Spanish needed
+real verb-conjugation swaps, not just pronoun substitution, e.g. `tenías`/`tenía`).
+`playOpponentTurn` now records the same `{kBefore, TBefore, dice, actionsAvailable,
+actionChosen, continued, resultingK, resultingT}` shape per roll the player's own
+`recordDecision` does, so the opponent gets graded by the exact same table. `runOpponentTurn`
+is now `async`, animating each roll (`renderDice` + a 1.5s pace between roll and decision
+reveal) with a persistent "Skip animation" control that also remembers the choice in a plain
+JS variable for the rest of the session (never `localStorage`, per this site's own no-storage
+commitment) and a `state.turnInProgress` re-entrancy guard. The opponent's dice render at 72%
+scale, shifted up, via a `.dice-row.opponent-row` CSS class toggled in `renderDice` based on
+`state.turnOwner`, measured via bounding box (309×146 vs 222×105, correctly smaller and
+higher) since the visual difference alone was hard to judge from a screenshot. Grouped banked
+dice: a new `decomposeAction()` parses a chosen action's label back into its separate scoring
+groups (e.g. "straight 1–5 + one 5" -> the 500 group and the 50 group, never merged) using the
+same per-face value rules that built the label in the first place, rendered as chips below the
+table scene for both sides, reset at each side's turn start. All verified via Playwright
+across multiple simulated rounds on all four pages: zero JS errors, zero external requests,
+correct score tracking through busts and banks.
+
 ---
 
 ## Phase 4: Separate background from character art

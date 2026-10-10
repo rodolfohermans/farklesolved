@@ -15,6 +15,38 @@ const THREE_KIND_VALUE = {1:1000, 2:200, 3:300, 4:400, 5:500, 6:600};
 function groupValue(face, count){ return THREE_KIND_VALUE[face] * Math.pow(2, count - 3); }
 
 const NUM_WORD = {0:'',1:'one',2:'two',3:'three',4:'four',5:'five',6:'six'};
+const NUM_WORD_REV = {one:1, two:2, three:3, four:4, five:5, six:6};
+
+// Splits a chosen action's label back into its separate scoring groups (e.g.
+// "straight 1–5 + one 5" -> the straight, worth 500, and a separate lone 5,
+// worth 50), so Phase 3e can show them as distinct chips rather than merging
+// a straight-plus-leftover bank into a single combined total. Mirrors the
+// same per-face value rules used to build the label in the first place
+// (faceOptions/genericValueLabel), so this never needs its own scoring logic.
+function decomposeAction(action){
+  if (!action.label) return [{label: action.label, val: action.val}];
+  return action.label.split(' + ').map(part => {
+    if (part === 'straight 1–5') return {label: part, val: 500};
+    if (part === 'straight 2–6') return {label: part, val: 750};
+    if (part === 'full straight 1–6') return {label: part, val: 1500};
+    const m = part.match(/^(\w+) (\d)s?$/);
+    if (!m) return {label: part, val: action.val};
+    const count = NUM_WORD_REV[m[1]], face = Number(m[2]);
+    const single = face === 1 ? 100 : (face === 5 ? 50 : null);
+    const val = single !== null ? (count < 3 ? single * count : groupValue(face, count)) : groupValue(face, count);
+    return {label: part, val};
+  });
+}
+
+function renderBankedGroups(){
+  const render1 = (groups, elId) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = groups.map(g => `<span class="banked-chip">${g.label} (+${g.val})</span>`).join('');
+  };
+  render1(state.bankedGroups.player, 'playerBankedGroups');
+  render1(state.bankedGroups.opponent, 'oppBankedGroups');
+}
 
 // returns list of [bankedCount, value, label]
 function faceOptions(face, count){
@@ -181,14 +213,16 @@ function bestAction(k, T, actions){
 function playOpponentTurn(strategy){
   let k = 6, T = 0;
   const log = [];
+  const decisions = [];
   const oppPreTurnScore = state.scores.opponent;
   while (true){
+    const kBefore = k, TBefore = T;
     const dice = rollDice(k);
     const {isBust, actions} = enumerateActions(dice);
     log.push(`rolled [${dice.join(', ')}]`);
     if (isBust){
       log.push(`BUST: loses ${T} pts banked this turn`);
-      return {points: 0, log};
+      return {points: 0, log, decisions, bustDice: dice};
     }
     let chosen, cont;
     if (strategy === 'optimal'){
@@ -235,10 +269,11 @@ function playOpponentTurn(strategy){
     if (cont && oppPreTurnScore + T >= state.target){
       cont = false;
     }
+    decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T});
     log.push(`banks ${chosen.label} (+${chosen.val}) → ${k} dice left, turn total ${T}`);
     if (!cont){
       log.push(`banks the turn: +${T} pts`);
-      return {points: T, log};
+      return {points: T, log, decisions};
     }
   }
 }
@@ -255,6 +290,7 @@ function startMatch(){
     k: 6, T: 0,
     pendingAction: null,
     decisions: [], // this turn's recorded player decisions
+    bankedGroups: {player: [], opponent: []}, // this turn's banked dice, grouped by scoring choice
     gameOver: false,
   };
   document.getElementById('reviewArea').innerHTML = '';
@@ -320,6 +356,8 @@ function renderIdle(){
   document.getElementById('turnLog').innerHTML = '';
   document.getElementById('reviewArea').innerHTML = '';
   document.getElementById('bannerArea').innerHTML = '';
+  document.getElementById('playerBankedGroups').innerHTML = '';
+  document.getElementById('oppBankedGroups').innerHTML = '';
 }
 
 // Changing target/opponent mid-match resets the match; confirm first.
@@ -378,6 +416,7 @@ let diceVariant = [];
 function renderDice(dice, selectable){
   const row = document.getElementById('diceRow');
   row.innerHTML = '';
+  row.classList.toggle('opponent-row', !selectable && state.turnOwner === 'opponent');
   if (diceJitter.length !== dice.length){
     diceJitter = dice.map(() => ({
       rot: (Math.random() * 16 - 8).toFixed(1),
@@ -428,6 +467,8 @@ function setCupsRollable(on){
 function beginPlayerRoll_UI(){
   clearLog();
   diceJitter = [];
+  state.bankedGroups.player = [];
+  renderBankedGroups();
   document.getElementById('diceRow').innerHTML = '';
   const controls = document.getElementById('controls');
   controls.innerHTML = '';
@@ -525,6 +566,8 @@ function confirmSelection(){
   state.k = kp; state.T = TAfter;
   document.getElementById('playerSelected').textContent = 0;
   logLine(`You bank ${a.label} (+${a.val}) → ${kp} dice left, turn total ${TAfter}.`);
+  state.bankedGroups.player.push(...decomposeAction(a));
+  renderBankedGroups();
   render();
 
   const controls = document.getElementById('controls');
@@ -583,22 +626,65 @@ function updateCharacterLayer(oppStrategy){
   el.classList.add('visible');
 }
 
-function runOpponentTurn(){
+// In-memory only (never localStorage/sessionStorage, per this site's no-storage
+// privacy commitment): "skip animation" is remembered for the rest of this page
+// load, but resets on reload like everything else here.
+let skipOpponentAnimation = false;
+let opponentTurnSkipRequested = false;
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function runOpponentTurn(){
+  if (state.turnInProgress) return;
   document.getElementById('controls').innerHTML = '';
   clearLog();
   document.getElementById('diceRow').innerHTML = '';
+  state.turnInProgress = true;
+  opponentTurnSkipRequested = false;
+  state.bankedGroups.opponent = [];
+  renderBankedGroups();
+
+  const controls = document.getElementById('controls');
+  if (!skipOpponentAnimation){
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'secondary';
+    skipBtn.textContent = 'Skip animation';
+    skipBtn.onclick = () => { opponentTurnSkipRequested = true; skipOpponentAnimation = true; };
+    controls.appendChild(skipBtn);
+  }
+  const pace = async () => {
+    if (opponentTurnSkipRequested || skipOpponentAnimation) return;
+    await sleep(1500);
+  };
+
   const strategy = state.oppStrategy === 'random'
     ? REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)]
     : state.oppStrategy;
   if (state.oppStrategy === 'random') logLine(`Tonight the Jester plays like ${CHARACTER_NAME[strategy]}.`);
-  const {points, log} = playOpponentTurn(strategy);
-  for (const line of log) logLine('Opponent ' + line);
+  const {points, log, decisions, bustDice} = playOpponentTurn(strategy);
+
+  for (const d of decisions){
+    renderDice(d.dice, false);
+    logLine(`Opponent rolled [${d.dice.join(', ')}]`);
+    await pace();
+    logLine(`Opponent banks ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dice left, turn total ${d.resultingT}`);
+    state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
+    renderBankedGroups();
+    await pace();
+  }
+  if (bustDice){
+    renderDice(bustDice, false);
+    logLine(`Opponent rolled [${bustDice.join(', ')}]`);
+    await pace();
+  }
   if (points > 0){
     logLine(`Opponent banks the turn: +${points} points.`);
   } else {
     logLine(`Opponent BUSTED: their turn ends with nothing banked.`);
   }
+  // Must run before scores.opponent updates: grading needs the pre-turn score.
+  renderReview(decisions, state.scores.opponent, state.scores.player, state.target, OPPONENT_SUBJECT);
   state.scores.opponent += points;
+  state.turnInProgress = false;
   render();
   if (checkWin()) return;
   // Don't auto-advance into your turn (and don't clear this log) until you've
@@ -606,7 +692,6 @@ function runOpponentTurn(){
   // so it must wait for an explicit click, same as the player->opponent handoff.
   state.turnOwner = 'player';
   render();
-  const controls = document.getElementById('controls');
   controls.innerHTML = '';
   const btn = document.createElement('button');
   btn.textContent = 'Your turn →';
@@ -646,29 +731,32 @@ function describeAction(a, kBefore){
   return `${a.label} (+${a.val}) → ${kp} dice left`;
 }
 
-function showReview(){
+const PLAYER_SUBJECT = {pron: 'you', poss: 'your', had: 'you had', chose: 'you chose'};
+const OPPONENT_SUBJECT = {pron: 'the opponent', poss: "the opponent's", had: 'the opponent had', chose: 'the opponent chose'};
+
+// Parameterized so both the player's and the opponent's turns can be graded by
+// the identical logic (Phase 3b): preTurnScore/otherScore/decisions all come
+// from whichever side is being reviewed, subj supplies the pronouns.
+function renderReview(decisions, preTurnScore, otherScore, target, subj){
   const area = document.getElementById('reviewArea');
-  if (state.decisions.length === 0){
+  if (decisions.length === 0){
     area.innerHTML = '<div class="review">Turn ended on the very first roll: no decisions to review.</div>';
     return;
   }
-  // IMPORTANT: this must run before finishPlayerTurn adds this turn's points
-  // to state.scores.player, so this is genuinely the player's PRE-turn total.
-  const preTurnScore = state.scores.player;
-  const reachesTarget = (T) => preTurnScore + T >= state.target;
+  const reachesTarget = (T) => preTurnScore + T >= target;
   // Same "end-game zone" condition as the live hint banner: either side within
   // ~1000 of the target. The report's own exact race-aware solve shows real
   // optimal play diverges substantially from these race-blind thresholds here
   // (e.g. pushing far harder than the table says while badly behind) -- so
   // outside the hard win/lose cases above, verdicts in this zone get a caveat
   // instead of a confident right/wrong, rather than silently overclaiming.
-  const endgameZone = (state.target - preTurnScore) <= 1000 || (state.target - state.scores.opponent) <= 1000;
+  const endgameZone = (target - preTurnScore) <= 1000 || (target - otherScore) <= 1000;
 
   // actionOK/contOK are tri-state: true = correct, false = wrong, null = too
   // close to the target to confidently grade with the race-blind table (not
   // counted toward the tally either way).
   let correctCount = 0, gradedCount = 0, uncertainCount = 0;
-  const rows = state.decisions.map((d, idx) => {
+  const rows = decisions.map((d, idx) => {
     // --- Win-aware override: reaching the match target is always correct,
     // full stop, regardless of what the race-blind EV table prefers. The
     // single-turn table has no concept of a match target at all, so without
@@ -682,9 +770,9 @@ function showReview(){
     if (winningAction){
       actionOK = chosenReachesTarget;
       if (actionOK){
-        actionHtml = `<span class="tag ok">✓ best pick</span> this reaches your target of ${state.target}: nothing beats winning outright, so the race-blind table's preference doesn't matter here.`;
+        actionHtml = `<span class="tag ok">✓ best pick</span> this reaches ${subj.poss} target of ${target}: nothing beats winning outright, so the race-blind table's preference doesn't matter here.`;
       } else {
-        actionHtml = `<span class="tag no">✗ suboptimal pick</span> you had a winning move available: <i>${describeAction(winningAction, d.kBefore)}</i> would have reached your target of ${state.target} directly.`;
+        actionHtml = `<span class="tag no">✗ suboptimal pick</span> ${subj.had.replace('had','had a')} winning move available: <i>${describeAction(winningAction, d.kBefore)}</i> would have reached ${subj.poss} target of ${target} directly.`;
       }
     } else {
       const opt = bestAction(d.kBefore, d.TBefore, d.actionsAvailable);
@@ -700,7 +788,7 @@ function showReview(){
         actionHtml = `<span class="tag meh">≈ near-optimal</span> a different pick (<i>${describeAction(opt, d.kBefore)}</i>) was technically worth marginally more (${opt.v.toFixed(1)} vs ${chosenV.toFixed(1)}, a ${gap.toFixed(1)}-point difference), too small to matter in practice.`;
       } else if (endgameZone){
         actionOK = null;
-        actionHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table prefers <i>${describeAction(opt, d.kBefore)}</i> here, but you or your opponent are close enough to the target that this comparison is known to be unreliable (see the report's full race-aware findings), not counted toward the tally.`;
+        actionHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table prefers <i>${describeAction(opt, d.kBefore)}</i> here, but either side is close enough to the target that this comparison is known to be unreliable (see the report's full race-aware findings), not counted toward the tally.`;
       } else {
         actionOK = false;
         actionHtml = `<span class="tag no">✗ suboptimal pick</span> optimal was <i>${describeAction(opt, d.kBefore)}</i> (expected value ${opt.v.toFixed(0)} vs ${chosenV.toFixed(0)}, a ${gap.toFixed(0)}-point gap)`;
@@ -711,21 +799,21 @@ function showReview(){
     if (chosenReachesTarget){
       contOK = !d.continued;
       if (contOK){
-        contHtml = `<span class="tag ok">✓ correct call</span> banking here reaches your target of ${state.target} and wins the match outright.`;
+        contHtml = `<span class="tag ok">✓ correct call</span> banking here reaches ${subj.poss} target of ${target} and wins the match outright.`;
       } else {
-        contHtml = `<span class="tag no">✗ wrong call</span> you'd already reached your target of ${state.target} by banking: continuing only risked busting a win that was already locked in.`;
+        contHtml = `<span class="tag no">✗ wrong call</span> ${subj.pron === 'you' ? "you'd" : "the opponent had"} already reached ${subj.poss} target of ${target} by banking: continuing only risked busting a win that was already locked in.`;
       }
     } else if (endgameZone){
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = null;
-      contHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table says ${contOptimal ? 'keep rolling' : 'bank'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, you had ${d.resultingT}), but that table doesn't know the match is close to ending, not counted toward the tally.`;
+      contHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table says ${contOptimal ? 'keep rolling' : 'bank'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}), but that table doesn't know the match is close to ending, not counted toward the tally.`;
     } else {
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = d.continued === contOptimal;
       if (contOK){
         contHtml = `<span class="tag ok">✓ correct call</span>`;
       } else {
-        contHtml = `<span class="tag no">✗ wrong call</span> exact play says you should have ${contOptimal ? 'kept rolling' : 'banked'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, you had ${d.resultingT}).`;
+        contHtml = `<span class="tag no">✗ wrong call</span> exact play says ${subj.pron} should have ${contOptimal ? 'kept rolling' : 'banked'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}).`;
       }
     }
 
@@ -737,9 +825,9 @@ function showReview(){
     }
 
     let html = `<div class="verdict-row">`;
-    html += `<b>Roll ${idx+1}</b> (${d.kBefore} dice, ${d.TBefore} banked so far): you chose <i>${describeAction(d.actionChosen, d.kBefore)}</i>. `;
+    html += `<b>Roll ${idx+1}</b> (${d.kBefore} dice, ${d.TBefore} banked so far): ${subj.chose} <i>${describeAction(d.actionChosen, d.kBefore)}</i>. `;
     html += actionHtml;
-    html += `<br>Then you chose to <b>${d.continued ? 'keep rolling' : 'bank'}</b>. `;
+    html += `<br>Then ${subj.pron} chose to <b>${d.continued ? 'keep rolling' : 'bank'}</b>. `;
     html += contHtml;
     html += `</div>`;
     return html;
@@ -750,6 +838,12 @@ function showReview(){
     (uncertainCount > 0 ? ` (${uncertainCount} more were in the end-game zone and not confidently gradable: see notes below).` : '.') +
     ` (Busting isn't necessarily a mistake: this grades the quality of each call given what you knew, not the outcome.)`;
   area.innerHTML = `<div class="review ${cls}">${header}${rows}</div>`;
+}
+
+function showReview(){
+  // IMPORTANT: this must run before finishPlayerTurn adds this turn's points
+  // to state.scores.player, so this is genuinely the player's PRE-turn total.
+  renderReview(state.decisions, state.scores.player, state.scores.opponent, state.target, PLAYER_SUBJECT);
 }
 
 /* ============================== WIRING ============================== */

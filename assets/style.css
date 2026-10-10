@@ -46,7 +46,8 @@
   .score-box.active{border-color:var(--gold); box-shadow:4px 4px 0 rgba(0,0,0,0.4), 0 0 0 2px var(--gold);}
   .score-box .who{font-family:var(--pixel); font-size:0.58rem; letter-spacing:1px; color:var(--ink-dark); opacity:0.75;}
   .score-box .val{font-family:var(--pixel); font-size:1.7rem; font-weight:normal; color:var(--accent); margin-top:6px; text-shadow:2px 2px 0 rgba(0,0,0,0.15);}
-  .dice-row{display:flex; flex-direction:column; align-items:center; margin:22px 0;}
+  .dice-row{display:flex; flex-direction:column; align-items:center; margin:22px 0; transition:transform .2s;}
+  .dice-row.opponent-row{transform:translateY(-46px) scale(0.72);}
   .dice-subrow{display:flex; gap:6px; justify-content:center;}
   .dice-subrow-offset{margin-top:-22px; margin-left:45px;}
   .die{
@@ -80,6 +81,11 @@
   .banner.win{background:rgba(74,124,89,0.25); color:#8fd4a3;}
   .banner.lose{background:rgba(165,54,42,0.25); color:#e8928a;}
   .hint{font-size:0.82rem; color:var(--accent3); margin-top:6px;}
+  .banked-groups-row{display:flex; justify-content:space-between; gap:10px; margin:6px 0 2px; min-height:1.6em;}
+  .banked-groups-col{display:flex; flex-wrap:wrap; gap:4px; flex:1;}
+  .banked-groups-col:first-child{justify-content:flex-start;}
+  .banked-groups-col:last-child{justify-content:flex-end;}
+  .banked-chip{display:inline-block; font-family:var(--pixel); font-size:0.52rem; padding:3px 7px; border-radius:2px; background:rgba(227,179,92,0.18); color:var(--gold); white-space:nowrap;}
   .muted{color:var(--muted); font-size:0.85rem;}
   .term{border-bottom:1px dotted var(--muted); cursor:help;}
   details.rules-details{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
