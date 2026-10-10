@@ -356,6 +356,34 @@ background), not just the tuning Phase 5 does for the live site.
 - Verify any claimed result via the club's own stated method (a Cloudflare URL Scan of total
   uncompressed weight) before claiming it qualifies.
 
+**Findings (2026-10-10), premise revised after verifying against the real rules:** this
+phase's "Cloudflare URL Scan" guess for the verification method was wrong; fetched the actual
+current rules at 512kb.club. Real tiers: Green under 100KB, Orange under 250KB, Blue under
+512KB, all uncompressed. Real stated method: Firefox's Network tab, "total size (not
+transferred)", on the homepage. Phase 2 and Phase 5's weight work (done for other reasons,
+not this one) happened to already bring index.html to ~437KB raw, comfortably inside the Blue
+tier on its own. But measuring the actual homepage load (not just the HTML file's byte count)
+surfaced a real separate bug: the default-selected opponent's portrait (The Jester, 119KB) was
+being fetched automatically on idle page load, via `renderIdle()` calling
+`updateCharacterLayer()`, pushing genuine total homepage weight to ~553KB, over the Blue
+threshold. Fixed on main (not worth a separate branch for): `renderIdle()` now only hides the
+character layer (`classList.remove('visible')`, no fetch) instead of loading a portrait before
+a match has actually started; the fetch still happens, just deferred to `startMatch()`, which
+is also exactly the "needs a genuine runtime fetch... because which portrait is needed can
+change" design Phase 1b already called for. Verified via Playwright: idle page load now fires
+exactly one request (the HTML document itself) on all four pages; the portrait request fires
+only after "Start match" is clicked.
+
+With that fixed, `index.html` measures 447,326 bytes (436.7 KiB) at idle load, under the 512KB
+Blue tier threshold with real headroom. This was not the original goal (Blue tier was assumed
+to need a separate, uglier branch with real visual cuts), so no separate branch was created.
+Whether to actually submit to the club (a public PR to their `_data/sites.yml` plus a mailing
+list patch, per their real submission process) is a judgment call for the user, not made here;
+measuring and fixing the underlying weight bug stands on its own regardless of that decision.
+Green or Orange tier would still need the cuts this phase originally anticipated (dropping the
+photo-style dice and the custom font); not attempted, since Blue tier was the only threshold
+actually at stake once the idle-load bug was fixed.
+
 ---
 
 ## Phase 7: Spanish version

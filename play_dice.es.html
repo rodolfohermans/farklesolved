@@ -700,7 +700,7 @@ function renderIdle(){
   document.getElementById('playerSelected').textContent = 0;
   document.getElementById('oppSelected').textContent = 0;
   document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
-  updateCharacterLayer(oppStrategy);
+  document.getElementById('characterLayer').classList.remove('visible'); // deferred to startMatch(): avoid loading a portrait before a match actually begins
   document.getElementById('targetLine').textContent = `Carrera a ${target} puntos`;
   document.getElementById('diceRow').innerHTML = '';
   setCupsRollable(false);
