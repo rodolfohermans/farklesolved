@@ -812,7 +812,6 @@ function recordDecision(kBefore, TBefore, actionsAvailable, actionChosen, contin
 function finishPlayerTurn(points){
   showReview(); // must run BEFORE scores.player updates: grading needs the pre-turn score to know what total would win
   state.scores.player += points;
-  const k = state.k, T = state.T;
   state.k = 6; state.T = 0;
   render();
   if (checkWin()) return;
