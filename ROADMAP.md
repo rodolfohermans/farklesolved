@@ -99,6 +99,16 @@ twice.
 - Once decided: remove the losing sprite set from the shipped page entirely (not just hide
   the selector) — this is also one of Phase 5's concrete weight-reduction levers.
 
+**Decision (2026-10-10): Realistic, provisional ("for now").** The case was presented with
+real measured numbers rather than impressions: the realistic set is ~381KB raw versus the
+pixel-art set's ~147KB, a 2.6x weight difference, worth 33% vs 13% of the page's total weight
+respectively if the losing set is dropped. Weight favors pixel-art by a wide margin; visual
+cohesion with the photographic table scene favors realistic (pixel-art dice visually sit on
+top of that scene rather than in it); flat high-contrast pixel-art pips are more robust to
+glare/low-end displays than realistic's softer shading; neither has a correctness or
+mobile-legibility problem (both verified). Chose realistic, accepting the weight cost,
+explicitly revisitable if page weight becomes a real problem later.
+
 ---
 
 ## Phase 3 — Opponent experience overhaul
@@ -181,9 +191,13 @@ Attack the actual thing making the page heavy — embedded art and font — not 
 bloat.
 
 **How:**
-- Ship only the dice style chosen in Phase 2, not both sprite sets.
-- Re-compress the largest embedded images (the background scene, the photo-derived dice
-  set).
+- Ship only the dice style chosen in Phase 2 (realistic), not both sprite sets. Measured:
+  dropping the unused pixel-art set alone removes ~147KB raw, ~13% of the current page
+  weight, the single biggest lever here, now that Phase 2 has actually been decided.
+- Re-compress the largest embedded images, starting with the realistic dice set itself
+  (~381KB raw, 44.5% of the page) and the background scene — realistic's photographic
+  shading and the AI-generated background are the more compressible assets, versus
+  pixel-art's already-flat colors which compress less.
 - Subset the embedded pixel font to the glyphs actually used instead of the full character
   set.
 - Measure with real before/after file sizes, not estimates.
