@@ -1,17 +1,23 @@
 # farklesolved.com
 
-**[farklesolved.com](https://farklesolved.com/)** ([en castellano](https://farklesolved.com/index.es.html)) is an exact, dynamic-programming-solved strategy for the dice minigame in *Kingdom Come: Deliverance* (the Farkle/Greed/Zilch family of "push your luck" dice games, using KCD's specific scoring table), plus a playable practice table that grades every decision you make against the exact solution.
+**[farklesolved.com](https://farklesolved.com/)** ([en castellano](https://farklesolved.com/index.es.html)) is an exact, dynamic-programming-solved strategy for the dice minigame in *Kingdom Come: Deliverance* (the Farkle/Greed/Zilch family of "push your luck" dice games, using KCD's specific scoring table).
+
+It is primarily a strategy reference and a practice tool: the point is to learn the exact optimal play and see your own decisions graded against it, not to be a game in its own right. It does turn out to be fun to play anyway.
 
 This is an unofficial fan project. It is not affiliated with, endorsed by, or associated with Warhorse Studios or the publishers of *Kingdom Come: Deliverance* in any way.
+
+## No tracking, no ads, lightweight
+
+No analytics, no tracking pixels, no third-party scripts, no cookies, nothing that identifies you. This is checked, not just claimed: the About page documents a real audit, including captured browser network traffic, not just a source-code read-through.
+
+Each page is a single self-contained file, about 434KB, comfortably inside the [512KB Club](https://512kb.club/)'s Blue tier. Everything, including the dice art, the background, and the custom font, is embedded in that one file; nothing else loads over the network except an opponent portrait fetched from this same site once you pick or change one.
 
 ## What's here
 
 - **[Practice table](https://farklesolved.com/play_dice.html)**: play against a selectable opponent (six personas, each a different strategy), with turn-by-turn coaching graded against the exact optimal-stopping solution, not a heuristic.
-- **[Strategy report](https://farklesolved.com/farkle_strategy_report.html)**: the full derivation, exact thresholds, a decision flowchart, and a cheat sheet, every numerical claim checked against independent Monte Carlo simulation.
-- **[About / privacy audit](https://farklesolved.com/about.html)**: how this was built, what it does and does not do with your visit, and a documented audit (not just an assertion) backing the no-tracking claim.
+- **[Strategy report](https://farklesolved.com/farkle_strategy_report.html)**: the full derivation, exact thresholds, a decision flowchart, and a cheat sheet, every numerical claim checked against independent Monte Carlo simulation. Start here if you just want the strategy, not the practice table.
+- **[About / privacy audit](https://farklesolved.com/about.html)**: how this was built, what it does and does not do with your visit, and the documented audit backing that.
 - A full Spanish translation of all three.
-
-No ads, no analytics, no tracking, no third-party scripts, no cookies. See the About page for the audit.
 
 ## How the math works
 
