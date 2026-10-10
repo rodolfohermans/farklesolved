@@ -44,6 +44,8 @@ def build_one(page, dice_sprites_js, dp_data_json, css, font_b64, bg_b64):
     html = html.replace("{{ES_HREF}}", page["es_href"])
     html = html.replace("{{EN_HREF}}", page["en_href"])
     html = html.replace("{{SIBLING_HREF}}", page["sibling_href"])
+    html = html.replace("{{CANONICAL_URL}}", page["canonical"])
+    html = html.replace("{{OG_IMAGE}}", page["og_image"])
     html = html.replace("{{GAME_JS}}", game_js)
     html = html.replace("{{DICE_SPRITES_JS}}", dice_sprites_js)
     html = html.replace("{{DP_DATA_JSON}}", dp_data_json)
