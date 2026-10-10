@@ -433,9 +433,24 @@ function playOpponentTurn(strategy){
     }
     let chosen, cont;
     if (strategy === 'optimal'){
-      chosen = bestAction(k, T, actions);
-      T += chosen.val; k = chosen.kp;
-      cont = shouldContinue(k, T);
+      // Win-aware action choice: if any available action reaches the match
+      // target outright this roll, take it (any one that reaches it is
+      // equally correct, since the turn ends either way) instead of asking
+      // bestAction for the race-blind single-turn-optimal pick. Without this,
+      // the Scholar could decline a winning move in favor of a higher-EV
+      // action and bust a turn it could have already banked as a win. Mirrors
+      // the winningAction concept in showReview()'s own grading logic.
+      const winningAction = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
+      if (winningAction){
+        const kp = winningAction.bc === k ? 6 : k - winningAction.bc;
+        chosen = winningAction;
+        T += chosen.val; k = kp;
+        cont = false;
+      } else {
+        chosen = bestAction(k, T, actions);
+        T += chosen.val; k = chosen.kp;
+        cont = shouldContinue(k, T);
+      }
     } else if (strategy === 'thresholds'){
       chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
