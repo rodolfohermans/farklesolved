@@ -69,6 +69,25 @@ of these need a design decision; they're direct edits.
     - Optional: a CSP meta tag making the no-external-loads commitment browser-enforced, not
       just documented
 
+**Implemented (2026-10-10), the two items still open:** keyboard/ARIA support on the dice
+(`role="button"`, `tabindex="0"`, `aria-pressed`, a descriptive `aria-label`, and an Enter/Space
+`keydown` handler sharing the same toggle logic as the click handler, both languages), and the
+CSP meta tag (`default-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src
+'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none';
+form-action 'none';`, on all seven pages: the four game pages, both about pages, and the
+strategy report). `frame-ancestors` was tried first per the usual CSP boilerplate, then
+dropped: browsers ignore it entirely when delivered via `<meta>` rather than an HTTP header
+(confirmed via a real console warning, not assumed), and a directive that silently does
+nothing is worse than no directive, since it implies protection that isn't there. Verified via
+Playwright: zero CSP console violations across all four game pages during actual play
+(including the same-origin character-portrait fetch under `img-src 'self'`), keyboard
+Enter-key toggle confirmed working end to end (`aria-pressed` flips, `.held` class applied).
+
+**Not implementable from a coding session:** `www.farklesolved.com` not resolving is a DNS
+record missing at the domain registrar/DNS provider, not a code change; nothing in this repo
+can fix it. Left for the user to add a `www` CNAME (or A/ALIAS, per whatever the apex record
+currently uses) pointing at the same target as the bare domain.
+
 ---
 
 ## Phase 1: Rules-as-implemented reference

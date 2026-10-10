@@ -437,17 +437,29 @@ function renderDice(dice, selectable){
   dice.forEach((d, idx) => {
     const div = document.createElement('div');
     div.className = 'die' + (selectable ? ' selectable' : '');
-    if (selectable && state.selectedSet.has(idx)) div.classList.add('held');
+    const isHeld = selectable && state.selectedSet.has(idx);
+    if (isHeld) div.classList.add('held');
         div.style.backgroundImage = 'url(' + DICE_SPRITES[d][diceVariant[idx] % DICE_SPRITES[d].length] + ')';
     const j = diceJitter[idx];
-    const heldLift = (selectable && state.selectedSet.has(idx)) ? -5 : 0;
+    const heldLift = isHeld ? -5 : 0;
     div.style.transform = `rotate(${j.rot}deg) translateY(${(+j.dy) + heldLift}px)`;
     if (selectable){
-      div.onclick = () => {
+      const toggle = () => {
         if (state.selectedSet.has(idx)) state.selectedSet.delete(idx);
         else state.selectedSet.add(idx);
         renderDice(dice, true);
         updateSelectionUI();
+      };
+      div.onclick = toggle;
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('aria-pressed', isHeld ? 'true' : 'false');
+      div.setAttribute('aria-label', `Die showing ${d}${isHeld ? ', held' : ''}`);
+      div.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          toggle();
+        }
       };
     }
     (idx < row1n ? subRow1 : subRow2).appendChild(div);
