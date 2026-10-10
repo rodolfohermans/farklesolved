@@ -7,10 +7,17 @@ dependencies, not a flat backlog. Nothing below is started. Re-derive actual sta
 
 ## Dependency overview
 
-- **Tier 1 — no dependencies, start anytime:** Phase 0, Phase 1, Phase 2, Phase 8
+- **Tier 1 — no dependencies, start anytime:** Phase 0, Phase 1, Phase 1b, Phase 2, Phase 8
 - **Tier 2 — depends on Tier 1:** Phase 3 (needs 1, 2), Phase 4, Phase 5 (needs 2)
 - **Tier 3 — depends on Tier 2:** Phase 4b (needs 4, deferred), Phase 6 (needs 5)
-- **Independent track:** Phase 7 (Spanish version) — no hard dependency on the above
+- **Independent track:** Phase 7 (Spanish version) — no hard dependency on the above, but see
+  Phase 1b's note on Phase 7 part 1's rework
+
+Phase 1b doesn't block anything else technically (every other phase can proceed with the
+current hand-rolled copy/regex-script approach), but doing Phase 3's dice rendering, Phase 4b's
+character loading, and Phase 7's remaining translation work *before* Phase 1b means redoing
+that work once the build system exists. Worth doing early for that reason, even though nothing
+formally depends on it.
 
 ---
 
@@ -83,6 +90,58 @@ drifting apart.
   disclosure pattern already in use), not a separate page.
 - Don't restate the race-blind/race-aware endgame caveat in detail here — footnote to the
   strategy report instead, to avoid the two documents drifting apart.
+
+---
+
+## Phase 1b — Build system and asset architecture
+
+**Depends on:** nothing. **Why now:** three separate problems converged on the same root
+cause this session (a corrupted line from a heredoc-quoting bug while hand-editing a 1.1MB
+file, near-useless git diffs on embedded base64, and a 4-way file-sync burden that's about to
+grow a 5th dimension). Hand-rolled regex-surgery Python scripts have been the stopgap all
+session; this is about replacing the stopgap, not adding new capability.
+
+**How:**
+- Real source assets as real files: individual sprite PNGs, the JS game logic as its own
+  `.js` file, CSS as its own `.css` file, each HTML page as a template with placeholders.
+  Actually diffable in git for the first time.
+- A small build script (Python or Node, not a dependency-graph tool like Make) that
+  assembles each final static HTML file from the shared template plus assets, base64-embedding
+  images/fonts as it does today.
+- A `justfile` wrapping it (`just build`), matching this user's own established tooling
+  convention, not a second build-tool paradigm.
+- One real decision needed: commit the built HTML (simple, no CI, but a "two sources of
+  truth" risk if someone edits the built file directly) versus a GitHub Actions build-on-push
+  (single source of truth, but new infrastructure for a solo project). Leaning toward
+  committing the build output given the project's size, but this needs the user's sign-off,
+  it's a judgment call like Phase 2's.
+- **Language text** (unblocks cleaning up Phase 7's duplication): build-time templating, not
+  a runtime fetch. One shared template/assets, a small per-language strings file, combined at
+  build time. The shipped page stays exactly as self-contained as today (this project's
+  "works with zero network connectivity at all" property is worth keeping), only the *source*
+  stops being two full 1.1MB files hand-kept in sync. Phase 7 part 1 (already shipped via the
+  duplicate-file approach) would get reworked onto this once it exists, not redone from
+  scratch, since the actual translated strings are already written.
+- **Dice sprite sets** (resolves the "don't ship both styles" request): the default style's
+  sprites stay embedded; the alternative style's sprites move to a small sibling asset file,
+  fetched on demand only if the visitor actually switches styles. This is a same-origin
+  fetch, not a third-party request, so it doesn't touch the no-tracking commitment, but it
+  does add the site's first runtime network call, which means updating the privacy audit's
+  "zero fetch() calls" line in about.html to be accurate ("same-origin only, no third party")
+  rather than letting the documentation drift from reality.
+- **Character portraits** (Phase 4b, once it exists): unlike language or dice style, this
+  needs a genuine runtime fetch, not a build-time trick, because which portrait is needed can
+  change mid-session (a new match, or the Jester revealing a different persona turn to turn),
+  not just once per page load. Fetch the one portrait actually needed at the moment an
+  opponent is selected or revealed, same-origin, same privacy-audit update as above applies.
+  Whether this is worth the added complexity depends on how heavy the portraits actually are
+  after cropping to content; measure before committing to lazy-loading them specifically, they
+  may be cheap enough to just embed all six.
+
+**Sequencing note:** do not start this concurrently with other in-flight edits to the HTML
+files, for the same reason the dice-compression work earlier this session was carefully
+staged around a running background workflow — a structural refactor racing against other
+edits to the same files is how things get corrupted.
 
 ---
 
