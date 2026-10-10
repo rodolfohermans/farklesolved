@@ -167,6 +167,10 @@ glare/low-end displays than realistic's softer shading; neither has a correctnes
 mobile-legibility problem (both verified). Chose realistic, accepting the weight cost,
 explicitly revisitable if page weight becomes a real problem later.
 
+**Implemented (2026-10-10):** pixel-art sprite set and the dice-style selector removed from
+all four pages. Each page dropped from ~1.1MB to ~930KB. `DICE_SPRITES_REALISTIC` renamed to
+`DICE_SPRITES` since it's now the only set.
+
 ---
 
 ## Phase 3: Opponent experience overhaul
