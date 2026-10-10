@@ -237,6 +237,16 @@
 <section id="solved">
   <h2>Is this game "solved," academically?</h2>
   <p>Partly — in two distinguishable senses.</p>
+  <p class="src-note">
+    Framed using the taxonomy from L.V. Allis's 1994 PhD thesis <em>Searching for Solutions in Games
+    and Artificial Intelligence</em> (Rijksuniversiteit Limburg, Maastricht), which defines
+    ultra-weakly, weakly, and strongly solved games, this project meets the strongly-solved bar for the
+    ruleset and target (G=4,000) modeled here: every reachable state's exact optimal value is computed,
+    not just the outcome from a fixed starting position. Two caveats apply: that taxonomy was written
+    for deterministic, perfect-information games, so applying it to a dice game borrows the framing
+    rather than claiming a literal fit, and the result is two-player only. 3+ player dynamics are a
+    different, unsolved problem not covered by this work.
+  </p>
   <div class="callout finding">
     <strong>The single-turn decision (when to bank vs. keep rolling) is exactly solved.</strong>
     This is structurally the same problem as the classic dice game <em>Pig</em>, whose optimal
