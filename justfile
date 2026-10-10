@@ -9,3 +9,9 @@ build:
 # Rebuild and confirm the output doesn't change (catches un-rebuilt drift).
 verify-build: build
     git diff --exit-code play_dice.html index.html play_dice.es.html index.es.html
+
+# Standing cross-device/browser smoke test (ROADMAP.md Phase 8). Run before
+# every visual change ships, not as a one-time audit: a stale CSS selector
+# silently breaking on mobile is exactly the bug that motivated this.
+test:
+    python3 build/test_pages.py

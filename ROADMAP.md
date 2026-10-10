@@ -390,3 +390,16 @@ bug.
   whether a hosted service's free tier adds enough over that).
 - Apply as a standing check before every future visual change ships, starting with Phase 3's
   new rendering work, not as a one-time audit.
+
+**Implemented (2026-10-10):** `build/test_pages.py` (`just test`), a standing smoke test
+across every page (the 4 game pages plus both about pages and the strategy report), at both
+a desktop and a 375x667 mobile viewport (the size class that caught the original bug), using
+whichever Playwright browser engines are actually installed. Checked this environment
+specifically: only Chromium is installed here, not Firefox or WebKit, so the roadmap's
+"multi-engine support is already in use locally" line was optimistic, not actual, when this
+was written. The script reports which engines ran and which were skipped rather than silently
+claiming coverage that didn't happen, and prints the install command for the missing ones.
+Evaluating a hosted cross-browser service is left for whenever Firefox/WebKit testing is
+actually needed locally and isn't available. Every phase of this session's work (Phase 2
+through Phase 4b) was checked this same way manually before this script existed; it now
+codifies that practice as a real, repeatable command instead of ad hoc one-off scripts.
