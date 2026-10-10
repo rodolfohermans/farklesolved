@@ -90,6 +90,24 @@
   .hint{font-size:0.82rem; color:var(--accent3); margin-top:6px;}
   .muted{color:var(--muted); font-size:0.85rem;}
   .term{border-bottom:1px dotted var(--muted); cursor:help;}
+  details.rules-details{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
+  details.rules-details summary{cursor:pointer; font-family:var(--pixel); font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; list-style:none;}
+  details.rules-details summary::-webkit-details-marker{display:none;}
+  details.rules-details summary::before{content:'\25B8  '; display:inline-block;}
+  details.rules-details[open] summary::before{content:'\25BE  ';}
+  details.rules-details h3{font-family:var(--pixel); font-size:0.66rem; color:var(--gold); letter-spacing:0.5px; margin:18px 0 8px;}
+  details.rules-details h3:first-of-type{margin-top:14px;}
+  details.rules-details p, details.rules-details li{font-size:0.9rem; color:var(--ink); line-height:1.6;}
+  .rules-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .rules-table{width:100%; table-layout:fixed; border-collapse:collapse; margin:8px 0 4px; font-size:0.82rem;}
+  .rules-table th, .rules-table td{padding:6px 4px; text-align:right; border-bottom:1px solid var(--line); overflow-wrap:break-word;}
+  .rules-table th:first-child, .rules-table td:first-child{text-align:left; width:15%;}
+  .rules-table thead th{color:var(--muted); font-weight:600; font-size:0.68rem; text-transform:uppercase; letter-spacing:.03em;}
+  .rules-table tbody tr:last-child td{border-bottom:none;}
+  @media (max-width:560px){
+    .rules-table{font-size:0.68rem;}
+    .rules-table th,.rules-table td{padding:5px 2px;}
+  }
   #controls .idle-hint{color:var(--muted); font-size:0.9rem;}
 
   .table-scene{
@@ -232,6 +250,95 @@
       tres escaleras). Ese es el reglamento exacto que se modela y resuelve aquí, no una versión
       genérica o promedio de Farkle.
     </p>
+
+    <details class="rules-details">
+      <summary>Reglas de puntuación exactas</summary>
+      <p>Esto está tomado directamente del código de puntuación que hay detrás de los botones de
+      "anotar" de esta misma página, no es una descripción genérica de Farkle de memoria. Si una
+      combinación no aparece aquí, esta implementación no la paga.</p>
+
+      <h3>Dados sueltos</h3>
+      <p>Un <b>1</b> suelto vale <b>100</b> puntos, un <b>5</b> suelto vale <b>50</b>, según
+      cuántos de esa cara decidas guardar, no cuántos salieron en la tirada: si guardas dos 1 de
+      una tirada en la que salieron tres, valen 200, no 1.000 (dos 1 = 200, dos 5 = 100). Un 2, 3,
+      4 o 6 no vale nada por sí solo, sin importar cuántos tengas, a menos que guardes tres o más
+      iguales. Y en cuanto guardas tres o más de <i>cualquier</i> cara, incluidos los 1 y los 5, el
+      conteo simple por dado se detiene y entra en juego la tabla de tríos de abajo, que es un
+      salto mucho más grande de lo que parece.</p>
+
+      <h3>Trío, póker, quintilla o sextilla (3, 4, 5 o 6 iguales)</h3>
+      <p>El trío tiene un valor base fijo según la cara. Cada dado adicional a partir del tercero
+      duplica ese valor base otra vez, no suma un paso fijo más. Calculado para cada cara
+      (3&times; = trío, 4&times; = póker, y así sucesivamente):</p>
+      <div class="rules-table-wrap">
+        <table class="rules-table">
+          <thead><tr><th>Cara</th><th>3&times;</th><th>4&times;</th><th>5&times;</th><th>6&times;</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>1.000</td><td>2.000</td><td>4.000</td><td>8.000</td></tr>
+            <tr><td>2</td><td>200</td><td>400</td><td>800</td><td>1.600</td></tr>
+            <tr><td>3</td><td>300</td><td>600</td><td>1.200</td><td>2.400</td></tr>
+            <tr><td>4</td><td>400</td><td>800</td><td>1.600</td><td>3.200</td></tr>
+            <tr><td>5</td><td>500</td><td>1.000</td><td>2.000</td><td>4.000</td></tr>
+            <tr><td>6</td><td>600</td><td>1.200</td><td>2.400</td><td>4.800</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Vale la pena señalarlo, porque confunde a quien viene de otras reglas caseras: un 1
+      suelto vale 100, y el trío de 1 salta directamente a 1.000, un salto de 10&times;. Es
+      tentador suponer que ese patrón sigue así, pero no es el caso. A partir del trío en
+      adelante, cada dado adicional solo <i>duplica</i> el valor del trío, nunca encadena otro
+      salto de 10&times;. Así que el póker de 1 es 2.000 (el doble del trío de 1.000), no 10.000,
+      la quintilla de 1 es 4.000, y la sextilla de 1 es 8.000. La duplicación es siempre
+      2&times; / 4&times; / 8&times; del valor del trío para 4, 5 o 6 iguales, la misma proporción
+      para cada cara, sin excepciones.</p>
+
+      <h3>Escaleras</h3>
+      <ul style="padding-left:20px; margin:8px 0;">
+        <li><b>1-2-3-4-5</b> (una de cada): fijo <b>500</b> puntos, usa 5 dados.</li>
+        <li><b>2-3-4-5-6</b> (una de cada): fijo <b>750</b> puntos, usa 5 dados.</li>
+        <li>Escalera completa <b>1-2-3-4-5-6</b> (una de cada cara, los seis dados a la vez): fijo
+        <b>1.500</b> puntos. Usa los seis dados, así que nunca queda un dado suelto para anotar
+        junto a ella.</li>
+      </ul>
+      <p>En las dos escaleras de cinco caras, cualquier dado de esa tirada que no haga falta para
+      completar la escalera (como mucho uno, porque la escalera ya usa 5 de tus 6 dados) se anota
+      aparte y se suma, con la regla de dados sueltos de arriba: un 1 o un 5 de sobra sigue
+      contando (100 o 50), un 2/3/4/6 de sobra no vale nada por sí solo. Además es todo o nada: si
+      falta aunque sea una de las caras necesarias, eso no es una escalera parcial que valga menos,
+      no cuenta como escalera en absoluto. Lo que sí tengas solo puede anotar mediante las reglas
+      normales de
+      dados sueltos y tríos por su cuenta.</p>
+
+      <h3>Plantarse sin anotar (bust)</h3>
+      <p>Después de cada tirada, el juego comprueba si existe <i>alguna</i> opción de anotar entre
+      los dados que acabas de tirar: cualquier 1 o 5 suelto, tres o más de una misma cara, o una
+      escalera. Si no hay nada de eso, la tirada se queda en cero (bust): no anotas nada, y
+      pierdes todos los puntos que llevabas acumulados en ese mismo turno, no solo los de esa
+      tirada, el turno entero.</p>
+
+      <h3>Dados calientes (hot dice)</h3>
+      <p>Si la selección que anotas usa <i>absolutamente todos</i> los dados de tu tirada actual,
+      literalmente todos, no solo los que puntuaron, consigues "dados calientes": tu siguiente
+      tirada empieza de nuevo con los seis dados, y el total acumulado de tu turno se mantiene
+      igual. Esto puede pasar más de una vez en el mismo turno, y también se aplica cuando ya te
+      quedan menos de seis dados: usar todo lo que te queda también te devuelve a seis.</p>
+      <p><i>Ejemplo:</i> digamos que ya llevas 500 puntos acumulados este turno y te quedan 2
+      dados. Los tiras y sacas un 1 y un 5. Anotar "un 1 + un 5" vale 150, y usa tus 2 dados
+      restantes, así que son dados calientes: tu total de turno pasa a 650, y tu siguiente tirada
+      es con seis dados frescos, no con cero.</p>
+
+      <h3>Ganar la partida</h3>
+      <p>En el momento en que el total de cualquiera de los dos lados llega al objetivo de la
+      partida, justo después de sumar los puntos de un turno al marcador, la partida termina de
+      inmediato y ese lado gana, sin más. Esto anula lo que sugiera la tabla de parada óptima de
+      un solo turno que aparece en esta página, ya que esa tabla solo evalúa un turno aislado y no
+      sabe nada del objetivo de la partida ni de la diferencia de puntos actual. Esto es una regla
+      de cómo está implementada la partida en sí, no solo una forma de jugar de la IA. (La
+      diferencia real entre esta tabla de un solo turno, ciega a la carrera, y una estrategia de
+      final de partida que sí tiene en cuenta la carrera, es un tema aparte, cubierto en el
+      <a href="farkle_strategy_report.html" style="color:var(--accent3);">informe de
+      estrategia</a> (en inglés).)</p>
+    </details>
   </div>
 
   <p class="muted" style="text-align:center; margin-top:28px; font-size:0.8rem; opacity:0.85;">Sin rastreo. Sin anuncios. Sin cookies de terceros. Nada en esta página carga desde ningún otro sitio. <a href="about.html" style="color:var(--accent2);">Lee la auditoría</a> (en inglés).</p>
