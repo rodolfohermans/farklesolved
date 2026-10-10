@@ -93,7 +93,7 @@
   details.rules-details{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
   details.rules-details summary{cursor:pointer; font-family:var(--pixel); font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; list-style:none;}
   details.rules-details summary::-webkit-details-marker{display:none;}
-  details.rules-details summary::before{content:'\25B8  '; display:inline-block;}
+  details.rules-details summary::before{content:'\25B8  '; display:inline-block; font-family:Arial,Helvetica,sans-serif;}
   details.rules-details[open] summary::before{content:'\25BE  ';}
   details.rules-details h3{font-family:var(--pixel); font-size:0.66rem; color:var(--gold); letter-spacing:0.5px; margin:18px 0 8px;}
   details.rules-details h3:first-of-type{margin-top:14px;}
@@ -149,7 +149,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Kingdom Come: Deliverance — Mesa de práctica de dados</h1>
+  <h1>Kingdom Come: Deliverance Mesa de práctica de dados</h1>
   <p style="text-align:center; margin:-8px 0 16px;"><a href="index.html" style="color:var(--accent3); font-size:0.85rem;">Read in English</a></p>
   <p class="sub">Juega contra el oponente que elijas: parroquianos de la taberna, desde el agudo Erudito hasta el temerario Borracho, cada uno con su propio estilo de juego. Al final de cada uno de tus turnos, cada decisión que tomaste se evalúa contra la solución exacta de parada óptima del informe de estrategia, no solo si ganaste el turno, sino si cada decisión fue la correcta dado lo que sabías en ese momento.</p>
 
@@ -158,10 +158,10 @@
       <div style="flex:1 1 200px; min-width:180px;">
         <label style="margin-top:0;">Objetivo de la partida</label>
         <select id="targetSelect">
-          <option value="1500">1.500 — apuestas bajas</option>
-          <option value="2000">2.000 — alternativa habitual</option>
-          <option value="4000" selected>4.000 — opción predeterminada</option>
-          <option value="5000">5.000 — apuestas altas</option>
+          <option value="1500">1.500 (apuestas bajas)</option>
+          <option value="2000">2.000 (alternativa habitual)</option>
+          <option value="4000" selected>4.000 (opción predeterminada)</option>
+          <option value="5000">5.000 (apuestas altas)</option>
           <option value="custom">Personalizado…</option>
         </select>
         <input type="number" id="customTarget" min="300" step="50" value="4000" style="display:none; margin-top:8px;">
@@ -170,12 +170,12 @@
       <div style="flex:2 1 260px; min-width:220px;">
         <label style="margin-top:0;">Oponente</label>
         <select id="oppSelect">
-          <option value="random" selected>El Bufón — el estilo de un parroquiano distinto cada turno</option>
-          <option value="optimal">El Erudito — juega la estrategia óptima para un solo turno, y siempre se queda con la jugada que gana la partida</option>
-          <option value="thresholds">El Intendente — guarda lo máximo que puede, solo arriesga cuando las probabilidades lo favorecen</option>
-          <option value="stop3">El Vigía — se detiene en cuanto quedan menos de 3 dados</option>
-          <option value="stop2">El Borracho — sigue tirando hasta quedarse con 1 dado, casi nunca sabe cuándo parar</option>
-          <option value="firstscore">El Sacerdote — guarda en cuanto puntúa y da la noche por terminada</option>
+          <option value="random" selected>El Bufón: el estilo de un parroquiano distinto cada turno</option>
+          <option value="optimal">El Erudito: juega la estrategia óptima para un solo turno, y siempre se queda con la jugada que gana la partida</option>
+          <option value="thresholds">El Intendente: guarda lo máximo que puede, solo arriesga cuando las probabilidades lo favorecen</option>
+          <option value="stop3">El Vigía: se detiene en cuanto quedan menos de 3 dados</option>
+          <option value="stop2">El Borracho: sigue tirando hasta quedarse con 1 dado, casi nunca sabe cuándo parar</option>
+          <option value="firstscore">El Sacerdote: guarda en cuanto puntúa y da la noche por terminada</option>
         </select>
       </div>
 
@@ -538,7 +538,7 @@ function playOpponentTurn(strategy){
     const {isBust, actions} = enumerateActions(dice);
     log.push(`tiró [${dice.join(', ')}]`);
     if (isBust){
-      log.push(`SE PASÓ — pierde ${T} puntos guardados este turno`);
+      log.push(`SE PASÓ: pierde ${T} puntos guardados este turno`);
       return {points: 0, log};
     }
     let chosen, cont;
@@ -814,7 +814,7 @@ function doPlayerRoll(){
   const {isBust, actions} = enumerateActions(dice);
   if (isBust){
     renderDice(dice, false);
-    logLine(`TE PASASTE — pierdes ${state.T} puntos guardados este turno.`);
+    logLine(`TE PASASTE: pierdes ${state.T} puntos guardados este turno.`);
     finishPlayerTurn(0);
     return;
   }
@@ -866,7 +866,7 @@ function updateSelectionUI(){
     statusEl.className = 'select-status';
     btn.disabled = true;
   } else if (result.valid){
-    statusEl.textContent = `Guardando ${result.label} — vale ${result.val} puntos. Válido.`;
+    statusEl.textContent = `Guardando ${result.label}: vale ${result.val} puntos. Válido.`;
     statusEl.className = 'select-status valid';
     btn.disabled = false;
     state.pendingSelection = {bc: state.selectedSet.size, val: result.val, label: result.label};
@@ -875,9 +875,9 @@ function updateSelectionUI(){
     if (dead.length > 0){
       const parts = dead.map(d => `${d.count===1?'un':'dos'} ${d.face}`).join(' y ');
       const singular = dead.length === 1 && dead[0].count === 1;
-      statusEl.textContent = `No es válido: ${parts} no ${singular?"cuenta":"cuentan"} por separado — un 2, 3, 4 o 6 solo puntúa en un grupo de tres o más. Deselecciónalo${singular?"":"s"}, o guarda al menos tres de esa cara.`;
+      statusEl.textContent = `No es válido: ${parts} no ${singular?"cuenta":"cuentan"} por separado, un 2, 3, 4 o 6 solo puntúa en un grupo de tres o más. Deselecciónalo${singular?"":"s"}, o guarda al menos tres de esa cara.`;
     } else {
-      statusEl.textContent = `Esta selección no puntúa — un dado guardado debe ser un 1, un 5, parte de un trío o más del mismo valor, o una escalera completa (puede que te falte un dado para completarla).`;
+      statusEl.textContent = `Esta selección no puntúa: un dado guardado debe ser un 1, un 5, parte de un trío o más del mismo valor, o una escalera completa (puede que te falte un dado para completarla).`;
     }
     statusEl.className = 'select-status invalid';
     btn.disabled = true;
@@ -910,7 +910,7 @@ function confirmSelection(){
 function recordDecision(kBefore, TBefore, actionsAvailable, actionChosen, continued){
   state.decisions.push({kBefore, TBefore, actionsAvailable, actionChosen, continued, resultingK: state.k, resultingT: state.T});
   if (continued){
-    doPlayerRoll(); // nothing left to choose before rolling again — just roll
+    doPlayerRoll(); // nothing left to choose before rolling again, just roll
   } else {
     logLine(`Guardas el turno: +${state.T} puntos.`);
     finishPlayerTurn(state.T);
@@ -951,7 +951,7 @@ function runOpponentTurn(){
   if (points > 0){
     logLine(`El oponente guarda el turno: +${points} puntos.`);
   } else {
-    logLine(`EL OPONENTE SE PASÓ — su turno termina sin guardar nada.`);
+    logLine(`EL OPONENTE SE PASÓ: su turno termina sin guardar nada.`);
   }
   state.scores.opponent += points;
   render();
@@ -1004,7 +1004,7 @@ function describeAction(a, kBefore){
 function showReview(){
   const area = document.getElementById('reviewArea');
   if (state.decisions.length === 0){
-    area.innerHTML = '<div class="review">El turno terminó en la primera tirada — no hay decisiones que revisar.</div>';
+    area.innerHTML = '<div class="review">El turno terminó en la primera tirada: no hay decisiones que revisar.</div>';
     return;
   }
   // IMPORTANT: this must run before finishPlayerTurn adds this turn's points
@@ -1037,7 +1037,7 @@ function showReview(){
     if (winningAction){
       actionOK = chosenReachesTarget;
       if (actionOK){
-        actionHtml = `<span class="tag ok">✓ mejor elección</span> esto alcanza tu objetivo de ${state.target} — nada supera ganar directamente, así que la preferencia de la tabla ciega a la carrera no importa aquí.`;
+        actionHtml = `<span class="tag ok">✓ mejor elección</span> esto alcanza tu objetivo de ${state.target}: nada supera ganar directamente, así que la preferencia de la tabla ciega a la carrera no importa aquí.`;
       } else {
         actionHtml = `<span class="tag no">✗ elección no óptima</span> tenías disponible una jugada ganadora: <i>${describeAction(winningAction, d.kBefore)}</i> habría alcanzado tu objetivo de ${state.target} directamente.`;
       }
@@ -1052,10 +1052,10 @@ function showReview(){
         actionHtml = `<span class="tag ok">✓ mejor elección</span>`;
       } else if (negligible){
         actionOK = true;
-        actionHtml = `<span class="tag meh">≈ casi óptimo</span> otra elección (<i>${describeAction(opt, d.kBefore)}</i>) valía técnicamente un poco más (${opt.v.toFixed(1)} frente a ${chosenV.toFixed(1)}, una diferencia de ${gap.toFixed(1)} puntos) — demasiado pequeña para importar en la práctica.`;
+        actionHtml = `<span class="tag meh">≈ casi óptimo</span> otra elección (<i>${describeAction(opt, d.kBefore)}</i>) valía técnicamente un poco más (${opt.v.toFixed(1)} frente a ${chosenV.toFixed(1)}, una diferencia de ${gap.toFixed(1)} puntos), demasiado pequeña para importar en la práctica.`;
       } else if (endgameZone){
         actionOK = null;
-        actionHtml = `<span class="tag meh">? incierto — zona de final de partida</span> la tabla ciega a la carrera prefiere <i>${describeAction(opt, d.kBefore)}</i> aquí, pero tú o tu oponente están lo bastante cerca del objetivo como para que esta comparación sea poco fiable (consulta los resultados completos del informe sobre la carrera) — no cuenta en el total.`;
+        actionHtml = `<span class="tag meh">? incierto: zona de final de partida</span> la tabla ciega a la carrera prefiere <i>${describeAction(opt, d.kBefore)}</i> aquí, pero tú o tu oponente están lo bastante cerca del objetivo como para que esta comparación sea poco fiable (consulta los resultados completos del informe sobre la carrera), no cuenta en el total.`;
       } else {
         actionOK = false;
         actionHtml = `<span class="tag no">✗ elección no óptima</span> lo óptimo era <i>${describeAction(opt, d.kBefore)}</i> (valor esperado ${opt.v.toFixed(0)} frente a ${chosenV.toFixed(0)}, una diferencia de ${gap.toFixed(0)} puntos)`;
@@ -1068,12 +1068,12 @@ function showReview(){
       if (contOK){
         contHtml = `<span class="tag ok">✓ decisión correcta</span> guardar aquí alcanza tu objetivo de ${state.target} y gana la partida directamente.`;
       } else {
-        contHtml = `<span class="tag no">✗ decisión equivocada</span> ya habías alcanzado tu objetivo de ${state.target} al guardar — seguir tirando solo arriesgaba una victoria que ya tenías asegurada.`;
+        contHtml = `<span class="tag no">✗ decisión equivocada</span> ya habías alcanzado tu objetivo de ${state.target} al guardar: seguir tirando solo arriesgaba una victoria que ya tenías asegurada.`;
       }
     } else if (endgameZone){
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = null;
-      contHtml = `<span class="tag meh">? incierto — zona de final de partida</span> la tabla ciega a la carrera dice ${contOptimal ? "seguir tirando" : "guardar"} aquí (el umbral para ${d.resultingK} dados es ${DP.thresholds[d.resultingK]}, tenías ${d.resultingT}), pero esa tabla no sabe que la partida está cerca de terminar — no cuenta en el total.`;
+      contHtml = `<span class="tag meh">? incierto: zona de final de partida</span> la tabla ciega a la carrera dice ${contOptimal ? "seguir tirando" : "guardar"} aquí (el umbral para ${d.resultingK} dados es ${DP.thresholds[d.resultingK]}, tenías ${d.resultingT}), pero esa tabla no sabe que la partida está cerca de terminar, no cuenta en el total.`;
     } else {
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = d.continued === contOptimal;
@@ -1102,8 +1102,8 @@ function showReview(){
 
   const cls = gradedCount === 0 ? '' : (correctCount === gradedCount ? 'good' : (correctCount === 0 ? 'bad' : ''));
   let header = `<b>${correctCount}/${gradedCount} decisiones coincidieron con el juego óptimo este turno</b>` +
-    (uncertainCount > 0 ? ` (${uncertainCount} más estaban en la zona de final de partida y no se pueden evaluar con confianza — ver notas abajo).` : '.') +
-    ` (Pasarse no es necesariamente un error — esto evalúa la calidad de cada decisión dado lo que sabías, no el resultado.)`;
+    (uncertainCount > 0 ? ` (${uncertainCount} más estaban en la zona de final de partida y no se pueden evaluar con confianza: ver notas abajo).` : '.') +
+    ` (Pasarse no es necesariamente un error: esto evalúa la calidad de cada decisión dado lo que sabías, no el resultado.)`;
   area.innerHTML = `<div class="review ${cls}">${header}${rows}</div>`;
 }
 

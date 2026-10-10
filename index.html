@@ -93,7 +93,7 @@
   details.rules-details{margin-top:16px; border-top:1px solid var(--line); padding-top:14px;}
   details.rules-details summary{cursor:pointer; font-family:var(--pixel); font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; list-style:none;}
   details.rules-details summary::-webkit-details-marker{display:none;}
-  details.rules-details summary::before{content:'\25B8  '; display:inline-block;}
+  details.rules-details summary::before{content:'\25B8  '; display:inline-block; font-family:Arial,Helvetica,sans-serif;}
   details.rules-details[open] summary::before{content:'\25BE  ';}
   details.rules-details h3{font-family:var(--pixel); font-size:0.66rem; color:var(--gold); letter-spacing:0.5px; margin:18px 0 8px;}
   details.rules-details h3:first-of-type{margin-top:14px;}
@@ -149,19 +149,19 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Kingdom Come: Deliverance — Dice Practice Table</h1>
+  <h1>Kingdom Come: Deliverance Dice Practice Table</h1>
   <p style="text-align:center; margin:-8px 0 16px;"><a href="index.es.html" style="color:var(--accent3); font-size:0.85rem;">Leer en español</a></p>
-  <p class="sub">Play against an opponent of your choosing — tavern regulars from the razor-sharp Scholar to the reckless Drunkard, each with their own way of playing. At the end of every one of your turns, each decision you made is graded against the exact optimal-stopping solution from the strategy report — not just whether you won the turn, but whether each call was the right one given what you knew.</p>
+  <p class="sub">Play against an opponent of your choosing: tavern regulars from the razor-sharp Scholar to the reckless Drunkard, each with their own way of playing. At the end of every one of your turns, each decision you made is graded against the exact optimal-stopping solution from the strategy report, not just whether you won the turn, but whether each call was the right one given what you knew.</p>
 
   <div class="card" id="matchSettings">
     <div style="display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end;">
       <div style="flex:1 1 200px; min-width:180px;">
         <label style="margin-top:0;">Match target</label>
         <select id="targetSelect">
-          <option value="1500">1,500 — low stakes</option>
-          <option value="2000">2,000 — common alternative target</option>
-          <option value="4000" selected>4,000 — default target</option>
-          <option value="5000">5,000 — high stakes</option>
+          <option value="1500">1,500 (low stakes)</option>
+          <option value="2000">2,000 (common alternative target)</option>
+          <option value="4000" selected>4,000 (default target)</option>
+          <option value="5000">5,000 (high stakes)</option>
           <option value="custom">Custom…</option>
         </select>
         <input type="number" id="customTarget" min="300" step="50" value="4000" style="display:none; margin-top:8px;">
@@ -170,12 +170,12 @@
       <div style="flex:2 1 260px; min-width:220px;">
         <label style="margin-top:0;">Opponent</label>
         <select id="oppSelect">
-          <option value="random" selected>The Jester — a different tavern regular's style every turn</option>
-          <option value="optimal">The Scholar — plays the optimal single-turn strategy, and always takes a roll that wins outright</option>
-          <option value="thresholds">The Quartermaster — banks the most he can, pushes his luck only when the odds favor it</option>
-          <option value="stop3">The Watchman — stops the moment fewer than 3 dice remain</option>
-          <option value="stop2">The Drunkard — keeps rolling until he's down to 1 die, rarely knowing when to quit</option>
-          <option value="firstscore">The Priest — banks the instant he scores and calls it a night</option>
+          <option value="random" selected>The Jester: a different tavern regular's style every turn</option>
+          <option value="optimal">The Scholar: plays the optimal single-turn strategy, and always takes a roll that wins outright</option>
+          <option value="thresholds">The Quartermaster: banks the most he can, pushes his luck only when the odds favor it</option>
+          <option value="stop3">The Watchman: stops the moment fewer than 3 dice remain</option>
+          <option value="stop2">The Drunkard: keeps rolling until he's down to 1 die, rarely knowing when to quit</option>
+          <option value="firstscore">The Priest: banks the instant he scores and calls it a night</option>
         </select>
       </div>
 
@@ -191,7 +191,7 @@
         <button id="startBtn" style="font-size:0.78rem; padding:12px 22px;">Start match</button>
       </div>
     </div>
-    <p class="muted" id="settingsHint" style="margin-top:14px;"><span class="term" title="At a 4,000-point target, the player who rolls first wins 55.71% of games between two equally-skilled, optimally-played sides, versus 44.29% for whoever goes second. That is 5.7 percentage points above an even split, from this project's exact race-solution dynamic program F(0,0) (see the strategy report).">You always roll first.</span> Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome — busting after a correct "push" call is still correct play. You can change the target or opponent at any time here — if a match is in progress, that resets it.</p>
+    <p class="muted" id="settingsHint" style="margin-top:14px;"><span class="term" title="At a 4,000-point target, the player who rolls first wins 55.71% of games between two equally-skilled, optimally-played sides, versus 44.29% for whoever goes second. That is 5.7 percentage points above an even split, from this project's exact race-solution dynamic program F(0,0) (see the strategy report).">You always roll first.</span> Coaching uses the exact single-turn optimal-stopping table (identical to the one in the strategy report); it grades the quality of each decision, not the outcome. Busting after a correct "push" call is still correct play. You can change the target or opponent at any time here; if a match is in progress, that resets it.</p>
   </div>
 
   <div id="game">
@@ -238,12 +238,12 @@
     <p style="font-size:0.9rem; color:var(--ink); line-height:1.6;">
       <b>Farkle</b> (also called Greed, Zilch, Dix Mille, or 10,000) is a traditional six-dice
       "push your luck" game played around the world for generations, in many regional house-rule
-      variants — there's no single official scoring table, which is part of why family and pub
+      variants. There's no single official scoring table, which is part of why family and pub
       versions differ so much. Read more on <a href="https://en.wikipedia.org/wiki/Farkle" style="color:var(--accent3);">Wikipedia</a>.
     </p>
     <p style="font-size:0.9rem; color:var(--ink); line-height:1.6;">
       <i>Kingdom Come: Deliverance</i> (set in 15th-century Bohemia) includes its own tavern
-      version of this folk game as a minigame Henry can play against NPCs — with one specific,
+      version of this folk game as a minigame Henry can play against NPCs, with one specific,
       fixed rule set (the scoring table this whole site is built around: triples, the doubling
       rule for extra-of-a-kind, and the three straights). That's the exact ruleset modeled and
       solved here, not a generic/average version of Farkle.
@@ -337,7 +337,7 @@
   </div>
 
   <p class="muted" style="text-align:center; margin-top:28px; font-size:0.8rem; opacity:0.85;">No tracking. No ads. No third-party cookies. Nothing on this page loads from anywhere but this page. <a href="about.html" style="color:var(--accent2);">Read the audit</a>.</p>
-  <p class="muted" style="text-align:center; margin-top:8px;">If this was useful or fun, <a href="https://ko-fi.com/rhermans" style="color:var(--accent2);">☕ buy me a coffee</a> — or read the <a href="farkle_strategy_report.html" style="color:var(--accent2);">full strategy report</a>.</p>
+  <p class="muted" style="text-align:center; margin-top:8px;">If this was useful or fun, <a href="https://ko-fi.com/rhermans" style="color:var(--accent2);">☕ buy me a coffee</a>, or read the <a href="farkle_strategy_report.html" style="color:var(--accent2);">full strategy report</a>.</p>
 </div>
 
 <script id="dp-data" type="application/json">
@@ -533,7 +533,7 @@ function playOpponentTurn(strategy){
     const {isBust, actions} = enumerateActions(dice);
     log.push(`rolled [${dice.join(', ')}]`);
     if (isBust){
-      log.push(`BUST — loses ${T} pts banked this turn`);
+      log.push(`BUST: loses ${T} pts banked this turn`);
       return {points: 0, log};
     }
     let chosen, cont;
@@ -809,7 +809,7 @@ function doPlayerRoll(){
   const {isBust, actions} = enumerateActions(dice);
   if (isBust){
     renderDice(dice, false);
-    logLine(`BUST — you lose ${state.T} points banked this turn.`);
+    logLine(`BUST: you lose ${state.T} points banked this turn.`);
     finishPlayerTurn(0);
     return;
   }
@@ -861,7 +861,7 @@ function updateSelectionUI(){
     statusEl.className = 'select-status';
     btn.disabled = true;
   } else if (result.valid){
-    statusEl.textContent = `Holding ${result.label} — worth ${result.val} points. Valid.`;
+    statusEl.textContent = `Holding ${result.label}: worth ${result.val} points. Valid.`;
     statusEl.className = 'select-status valid';
     btn.disabled = false;
     state.pendingSelection = {bc: state.selectedSet.size, val: result.val, label: result.label};
@@ -870,9 +870,9 @@ function updateSelectionUI(){
     if (dead.length > 0){
       const parts = dead.map(d => `${d.count===1?'one':'two'} ${d.face}${d.count>1?'s':''}`).join(' and ');
       const singular = dead.length === 1 && dead[0].count === 1;
-      statusEl.textContent = `Not valid: ${parts} ${singular?"doesn't":"don't"} score on ${singular?'its':'their'} own — a 2, 3, 4 or 6 only scores in a group of three or more. Deselect ${singular?'it':'them'}, or hold at least three of that face.`;
+      statusEl.textContent = `Not valid: ${parts} ${singular?"doesn't":"don't"} score on ${singular?'its':'their'} own, a 2, 3, 4 or 6 only scores in a group of three or more. Deselect ${singular?'it':'them'}, or hold at least three of that face.`;
     } else {
-      statusEl.textContent = `This selection doesn't score — a held die must be a 1, a 5, part of a three-or-more-of-a-kind, or a complete straight (you may be missing a die needed to finish one).`;
+      statusEl.textContent = `This selection doesn't score: a held die must be a 1, a 5, part of a three-or-more-of-a-kind, or a complete straight (you may be missing a die needed to finish one).`;
     }
     statusEl.className = 'select-status invalid';
     btn.disabled = true;
@@ -905,7 +905,7 @@ function confirmSelection(){
 function recordDecision(kBefore, TBefore, actionsAvailable, actionChosen, continued){
   state.decisions.push({kBefore, TBefore, actionsAvailable, actionChosen, continued, resultingK: state.k, resultingT: state.T});
   if (continued){
-    doPlayerRoll(); // nothing left to choose before rolling again — just roll
+    doPlayerRoll(); // nothing left to choose before rolling again, just roll
   } else {
     logLine(`You bank the turn: +${state.T} points.`);
     finishPlayerTurn(state.T);
@@ -946,7 +946,7 @@ function runOpponentTurn(){
   if (points > 0){
     logLine(`Opponent banks the turn: +${points} points.`);
   } else {
-    logLine(`Opponent BUSTED — their turn ends with nothing banked.`);
+    logLine(`Opponent BUSTED: their turn ends with nothing banked.`);
   }
   state.scores.opponent += points;
   render();
@@ -999,7 +999,7 @@ function describeAction(a, kBefore){
 function showReview(){
   const area = document.getElementById('reviewArea');
   if (state.decisions.length === 0){
-    area.innerHTML = '<div class="review">Turn ended on the very first roll — no decisions to review.</div>';
+    area.innerHTML = '<div class="review">Turn ended on the very first roll: no decisions to review.</div>';
     return;
   }
   // IMPORTANT: this must run before finishPlayerTurn adds this turn's points
@@ -1032,7 +1032,7 @@ function showReview(){
     if (winningAction){
       actionOK = chosenReachesTarget;
       if (actionOK){
-        actionHtml = `<span class="tag ok">✓ best pick</span> this reaches your target of ${state.target} — nothing beats winning outright, so the race-blind table's preference doesn't matter here.`;
+        actionHtml = `<span class="tag ok">✓ best pick</span> this reaches your target of ${state.target}: nothing beats winning outright, so the race-blind table's preference doesn't matter here.`;
       } else {
         actionHtml = `<span class="tag no">✗ suboptimal pick</span> you had a winning move available: <i>${describeAction(winningAction, d.kBefore)}</i> would have reached your target of ${state.target} directly.`;
       }
@@ -1047,10 +1047,10 @@ function showReview(){
         actionHtml = `<span class="tag ok">✓ best pick</span>`;
       } else if (negligible){
         actionOK = true;
-        actionHtml = `<span class="tag meh">≈ near-optimal</span> a different pick (<i>${describeAction(opt, d.kBefore)}</i>) was technically worth marginally more (${opt.v.toFixed(1)} vs ${chosenV.toFixed(1)}, a ${gap.toFixed(1)}-point difference) — too small to matter in practice.`;
+        actionHtml = `<span class="tag meh">≈ near-optimal</span> a different pick (<i>${describeAction(opt, d.kBefore)}</i>) was technically worth marginally more (${opt.v.toFixed(1)} vs ${chosenV.toFixed(1)}, a ${gap.toFixed(1)}-point difference), too small to matter in practice.`;
       } else if (endgameZone){
         actionOK = null;
-        actionHtml = `<span class="tag meh">? uncertain — end-game zone</span> the race-blind table prefers <i>${describeAction(opt, d.kBefore)}</i> here, but you or your opponent are close enough to the target that this comparison is known to be unreliable (see the report's full race-aware findings) — not counted toward the tally.`;
+        actionHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table prefers <i>${describeAction(opt, d.kBefore)}</i> here, but you or your opponent are close enough to the target that this comparison is known to be unreliable (see the report's full race-aware findings), not counted toward the tally.`;
       } else {
         actionOK = false;
         actionHtml = `<span class="tag no">✗ suboptimal pick</span> optimal was <i>${describeAction(opt, d.kBefore)}</i> (expected value ${opt.v.toFixed(0)} vs ${chosenV.toFixed(0)}, a ${gap.toFixed(0)}-point gap)`;
@@ -1063,12 +1063,12 @@ function showReview(){
       if (contOK){
         contHtml = `<span class="tag ok">✓ correct call</span> banking here reaches your target of ${state.target} and wins the match outright.`;
       } else {
-        contHtml = `<span class="tag no">✗ wrong call</span> you'd already reached your target of ${state.target} by banking — continuing only risked busting a win that was already locked in.`;
+        contHtml = `<span class="tag no">✗ wrong call</span> you'd already reached your target of ${state.target} by banking: continuing only risked busting a win that was already locked in.`;
       }
     } else if (endgameZone){
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = null;
-      contHtml = `<span class="tag meh">? uncertain — end-game zone</span> the race-blind table says ${contOptimal ? 'keep rolling' : 'bank'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, you had ${d.resultingT}), but that table doesn't know the match is close to ending — not counted toward the tally.`;
+      contHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table says ${contOptimal ? 'keep rolling' : 'bank'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, you had ${d.resultingT}), but that table doesn't know the match is close to ending, not counted toward the tally.`;
     } else {
       const contOptimal = shouldContinue(d.resultingK, d.resultingT);
       contOK = d.continued === contOptimal;
@@ -1097,8 +1097,8 @@ function showReview(){
 
   const cls = gradedCount === 0 ? '' : (correctCount === gradedCount ? 'good' : (correctCount === 0 ? 'bad' : ''));
   let header = `<b>${correctCount}/${gradedCount} decisions matched optimal play this turn</b>` +
-    (uncertainCount > 0 ? ` (${uncertainCount} more were in the end-game zone and not confidently gradable — see notes below).` : '.') +
-    ` (Busting isn't necessarily a mistake — this grades the quality of each call given what you knew, not the outcome.)`;
+    (uncertainCount > 0 ? ` (${uncertainCount} more were in the end-game zone and not confidently gradable: see notes below).` : '.') +
+    ` (Busting isn't necessarily a mistake: this grades the quality of each call given what you knew, not the outcome.)`;
   area.innerHTML = `<div class="review ${cls}">${header}${rows}</div>`;
 }
 
