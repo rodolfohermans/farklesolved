@@ -143,7 +143,7 @@
     This collapses the exact per-state thresholds derived later in this report into rule-of-thumb
     numbers. It intentionally blurs small differences between specific match targets, checked against
     both commonly-cited defaults for a standard KCD1 match (sources disagree: 2,000 and 4,000 points
-    both appear as "the" default, and real games vary further by opponent and wager, see the note
+    both appear as "the" default, and real games vary further by opponent and wager; see the note
     below the chart). The qualitative shape of the decision is the same at either target; only the
     precise cutoff numbers shift a little.
   </p>
@@ -185,7 +185,7 @@
     <div class="flow-branch">
       <div class="flow-branch-col">
         <span class="flow-tag yes">yes</span>
-        <div class="flow-node go">END-GAME RULE: never bank partial progress here. Keep rolling with whatever dice you have left until you hit the target outright or bust trying, dice-remaining stops mattering this close to the finish.</div>
+        <div class="flow-node go">END-GAME RULE: never bank partial progress here. Keep rolling with whatever dice you have left until you hit the target outright or bust trying. Dice-remaining stops mattering this close to the finish.</div>
       </div>
       <div class="flow-branch-col">
         <span class="flow-tag no">no</span>
@@ -223,13 +223,13 @@
   </div>
 
   <p class="src-note">
-    On the realistic target: independent sources disagree on KCD1's default match length,
+    On the realistic target: independent sources disagree on KCD1's default match length:
     gamepressure.com states a 2,000-point default, another wiki says "usually 4,000," and several
     sources agree the actual target scales with the opponent and the size of the wager. This report's
     fully-detailed exact solve below targets G=4,000; <code>race_dp.py</code> takes the target
     <code>G</code> as a plain parameter, so re-solving at G=2,000 (or any other target) is a
     self-check anyone can run directly rather than a result this report asserts a specific number
-    for, the flowchart above and the cheat sheet later in this report are intended for either
+    for; the flowchart above and the cheat sheet later in this report are intended for either
     commonly-cited target, and for stakes in between.
   </p>
 </section>
@@ -377,7 +377,7 @@
       250); any other route to 1 die left (a 1 counted somewhere, or any triple+) puts you over 250 and
       the answer flips straight back to "bank." Same logic makes the 200 threshold at 2 dice left an
       exact floor too (4×50=200). The 1-vs-2 comparison above is real DP output, but it compares two
-      edge cases, not two live decision ranges, §Reading your first roll shows this concretely (no
+      edge cases, not two live decision ranges; §Reading your first roll shows this concretely (no
       opening-roll path ever reaches 1 or 2 dice left with a total anywhere near that low).</li>
       <li>At 5 or 6 dice remaining the threshold is far above what a single roll can produce (maximum
       is 8,000, from six 1s, still under 12,900), but that doesn't mean the opening roll usually calls
@@ -410,7 +410,7 @@
   </div>
   <div class="callout finding">
     <strong>A row is missing on purpose, and that's itself a finding:</strong> the optimal policy never
-    deliberately leaves exactly 4 dice on the opening roll. Checked exhaustively, whenever banking
+    deliberately leaves exactly 4 dice on the opening roll. Checked exhaustively: whenever banking
     exactly 2 dice (say, two lone 5s) is on offer, there's always a strictly better alternative: either
     bank only 1 of them and keep 5 dice live, or take a bigger combination instead. The practical rule:
     <strong>if your opening roll gives you two 1s or two 5s with nothing else scoring, bank only one of
@@ -445,7 +445,7 @@
     </table>
   </div>
   <p>
-    Option C (take the triple <em>and</em> the stray single, the obvious "greedy" play, and the
+    Option C (take the triple <em>and</em> the stray single: the obvious "greedy" play, and the
     strongest real competitor) still loses to declining the triple entirely: 428 &gt; 300 and 392 &gt;
     350. Banking the smaller amount but keeping 5 dice beats grabbing the bigger score and dropping to
     only 2–3 dice: the extra survivability of a near-full hand is worth more than the point difference.
@@ -483,9 +483,9 @@
   </p>
   <h3>Turn score distribution under the optimal policy (300,000 turns, independent run)</h3>
   <p class="src-note">This is a separate, larger-sample simulation run from the 150,000-turn table above
-    (different seed), it's why 564 / 19.3% here and 566.2 / 19.0% above don't match to the decimal.
+    (different seed): it's why 564 / 19.3% here and 566.2 / 19.0% above don't match to the decimal.
     Turn score has a standard deviation of about 508, so the standard error on a 300,000-turn mean is
-    about ±0.9 (±1.3 at 150,000 turns), both observed means (564.36 and 566.15) are within 1.3 standard
+    about ±0.9 (±1.3 at 150,000 turns); both observed means (564.36 and 566.15) are within 1.3 standard
     errors of the DP's exact value, 564.44.</p>
   <div class="grid2">
     <div class="card stat"><div class="v">564</div><div class="l">mean points / turn</div></div>
@@ -563,13 +563,13 @@
   <p class="src-note">
     This table was re-run at N=50,000 (up from an initial N=10,000) after an independent audit found a
     too-tight numerical tolerance in the simulator that could occasionally make it play a slightly
-    different policy than the one actually solved for, see §Caveats. The exact <code>F</code> column is
+    different policy than the one actually solved for; see §Caveats. The exact <code>F</code> column is
     completely unchanged by that fix (it only affected the simulator); the Monte Carlo column moved by
     less than its own margin of error.
   </p>
   <p>
     Every difference is well inside its own row's 95% confidence interval (computed per-row from that
-    row's empirical proportion, these range from about ±0.0006 for the near-certain 0.995 row up to
+    row's empirical proportion: these range from about ±0.0006 for the near-certain 0.995 row up to
     ±0.0044 for the near-50/50 rows at this larger N, not one blanket number). The exact dynamic program
     and independent
     simulation agree everywhere they were checked: the strongest form of verification available short
@@ -598,7 +598,7 @@
       </tbody>
     </table>
     <p class="src-note">± values are 95% confidence intervals from N=300,000 races per matchup. (This
-      table was re-run after an audit-found tolerance bug fix in the simulator, see §Caveats; the
+      table was re-run after an audit-found tolerance bug fix in the simulator. See §Caveats; the
       corrected numbers are very close to, and the conclusion is unchanged from, the first run.)</p>
   </div>
   <div class="callout finding">
@@ -608,7 +608,7 @@
     the corrected, adequately-powered version). Measured as edge-over-a-coin-flip, pure race-blind play
     (a) is 3.54 points above 50%, and the patched version (b) is 2.80 points above 50%.
     <strong>The trivial "stop once you'd already won" patch closes only about one-fifth of that edge
-    (2.80⁄3.54 ≈ 79% survives the patch), the remaining four-fifths comes from the dynamic programming
+    (2.80⁄3.54 ≈ 79% survives the patch): the remaining four-fifths comes from the dynamic programming
     adjusting risk tolerance throughout the whole game</strong>: pushing harder than the fixed table
     says while behind, banking more conservatively at low dice counts while ahead, and never banking
     partial progress near the finish, not just fixing the final-turn blind spot. The table below shows
@@ -642,14 +642,14 @@
     voluntarily banks short of the target at all</strong>: keep rolling for literally any value up to
     the point where you'd either win outright or bust trying. Four of the six rows below hit exactly
     this ceiling at every k (far-behind's k=3–6, far-ahead's k=4–6, and both near-finish rows across the
-    board), check each against the arithmetic: 3,950 = 4000−0−50 is <em>that player's own</em> ceiling
+    board); check each against the arithmetic: 3,950 = 4000−0−50 is <em>that player's own</em> ceiling
     (deficit case, x=0), 950 = 4000−3000−50 (lead case, x=3,000, and separately the near-finish case,
     x=3,000), 450 = 4000−3,500−50, 50 = 4000−3,900−50.
   </div>
   <p>With that reading in hand, four clear patterns fall out of the exact numbers:</p>
   <ul>
     <li><strong>Even tied at the very start, the race-aware thresholds for 5–6 dice are dramatically
-      lower than the pure-EV table</strong> (2,100 and 3,100 vs. 3,350 and 12,900, genuine, non-saturated
+      lower than the pure-EV table</strong> (2,100 and 3,100 vs. 3,350 and 12,900: genuine, non-saturated
       values here, since 2,100 and 3,100 are well short of 4000−0−50=3,950). Pure EV-maximization says
       push almost without limit with a fresh hand because rare huge turns pull the long-run average up;
       but in a race, a turn that big already makes you a near-certain winner, so there's nothing left to
@@ -662,7 +662,7 @@
       while a single huge turn might end the game immediately.</li>
     <li><strong>Holding a lead flips the same logic the other way at low k, but saturates at high
       k too</strong>: 150/150/250 at k=1–3 are genuine conservative thresholds (bank early with few
-      dice, protect the lead), but 950 at k=4–6 is <em>also</em> a saturated ceiling (4000−3,000−50),
+      dice, protect the lead), but 950 at k=4–6 is <em>also</em> a saturated ceiling (4000−3,000−50);
       with a big lead and 4+ dice in hand, the policy still says push for the kill rather than bank a
       safe partial gain, exactly the opposite of "bank early and often" in that regime.</li>
     <li><strong>Right at the finish, every single cell is saturated</strong>: all three near-finish
@@ -703,7 +703,7 @@
         threshold: bank and stop. (3 dice left on the opening roll is a genuine toss-up: stop if you've
         already got &gt;400, otherwise push. 5–6 dice left → push, essentially always, and never happens
         at exactly 4, see §Reading your first roll.)</li>
-      <li><strong>The 250 / 200 thresholds at 1–2 dice left are tighter than they look, they're
+      <li><strong>The 250 / 200 thresholds at 1–2 dice left are tighter than they look; they're
         floors, not ranges:</strong> every legal bank is worth at least 50 points (the cheapest is a lone
         5), so reaching exactly 1 die left requires having banked 5 dice already this turn, which means
         your total is <em>at minimum</em> 5×50 = 250: exactly the threshold. So "push with 1 die left"
@@ -722,7 +722,7 @@
         keep rolling for the exact win (or bust trying) regardless of how many dice you have left.
         Locking in a safe-but-incomplete gain is worse than swinging for the finish. The same "don't bank
         partial progress" logic kicks in with 4+ dice in hand even while comfortably ahead by a lot
-        (e.g. a 3,000-point lead), only with few dice (1–3) in hand does a lead call for the more
+        (e.g. a 3,000-point lead); only with few dice (1–3) in hand does a lead call for the more
         familiar "bank early, protect it" instinct.</li>
     </ol>
   </div>
