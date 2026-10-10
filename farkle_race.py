@@ -8,7 +8,6 @@ from farkle_sim import (
     play_turn_greedy_fixed_dice, race_game,
 )
 
-farkle_dp.T_MAX = 60000
 farkle_dp.N_T = farkle_dp.T_MAX // STEP + 1
 
 if __name__ == "__main__":

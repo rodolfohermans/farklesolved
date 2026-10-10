@@ -23,7 +23,6 @@ print(f"Solved in {time.time()-t0:.1f}s. F[0,0] = {F[0,0]:.4f} "
       f"(exact win probability for whoever rolls first, race to {G})\n")
 
 print("Solving single-turn EV-maximizing policy (for comparison baselines)...")
-farkle_dp.T_MAX = 60000
 farkle_dp.N_T = farkle_dp.T_MAX // STEP1 + 1
 V_turn, Tgrid_turn = farkle_dp.solve()
 

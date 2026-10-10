@@ -21,7 +21,6 @@ with open("race_solution.pkl", "rb") as f:
 F, U_all, N, Nx, G, STEP = d["F"], d["U_all"], d["N"], d["Nx"], d["G"], d["STEP"]
 print(f"Loaded. F[0,0]={F[0,0]:.6f}, G={G}, N={N}")
 
-farkle_dp.T_MAX = 60000
 farkle_dp.N_T = farkle_dp.T_MAX // STEP1 + 1
 print("Solving single-turn EV-max policy...")
 V_turn, Tgrid_turn = farkle_dp.solve()

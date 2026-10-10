@@ -7,7 +7,6 @@ from farkle_dp import STEP
 from farkle_kcd import weighted_outcomes_for_k, bust_probability
 from farkle_sim import play_turn_optimal, play_turn_threshold, play_turn_naive_bank_first, play_turn_greedy_fixed_dice
 
-farkle_dp.T_MAX = 60000
 farkle_dp.N_T = farkle_dp.T_MAX // STEP + 1
 
 V, T_grid = farkle_dp.solve()

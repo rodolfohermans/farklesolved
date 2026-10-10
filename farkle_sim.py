@@ -9,7 +9,6 @@ from farkle_kcd import enumerate_actions
 import farkle_dp
 from farkle_dp import STEP
 
-farkle_dp.T_MAX = 60000
 farkle_dp.N_T = farkle_dp.T_MAX // STEP + 1
 
 
