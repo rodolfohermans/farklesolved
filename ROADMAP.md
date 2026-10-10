@@ -282,6 +282,18 @@ bloat.
   set.
 - Measure with real before/after file sizes, not estimates.
 
+**Implemented (2026-10-10):** all three levers, measured. Realistic dice: 381KB raw across 24
+PNGs reduced to 75KB via 128-color palette quantization (`Image.quantize`, `FASTOCTREE`);
+checked side-by-side at both 84px (actual display size) and 168px (2x/retina) and found no
+visible difference. Background JPEG: 175KB reduced to 101KB at quality 55 (the AI-generated
+pixel-art-style scene compresses unusually well; it stayed visually identical even at quality
+25 in testing, but 55 was kept as a safety margin rather than riding the edge). Pixel font:
+30KB reduced to 7.6KB by subsetting to the exact character set used across both languages'
+templates and game logic (`pyftsubset`), verified visually (Spanish accented characters
+render correctly). Combined with Phase 2's pixel-art-sprite removal, each shipped page went
+from ~1.1MB (session start) to ~416KB, a 62% reduction. Verified via Playwright after each
+step: dice render, zero JS errors, zero external requests, all four pages.
+
 ---
 
 ## Phase 6: 512KB Club branch
