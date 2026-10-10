@@ -226,10 +226,12 @@
     On the realistic target: independent sources disagree on KCD1's default match length —
     gamepressure.com states a 2,000-point default, another wiki says "usually 4,000," and several
     sources agree the actual target scales with the opponent and the size of the wager. This report's
-    fully-detailed exact solve below targets G=4,000; as a check, the full race was also re-solved at
-    G=2,000 and produces the same qualitative shape (push hard early, collapse near the finish, spike
-    when behind, cap when ahead) with similar-sized numbers — so the flowchart above and the cheat sheet
-    later in this report are reasonable for either commonly-cited target, and for stakes in between.
+    fully-detailed exact solve below targets G=4,000; <code>race_dp.py</code> takes the target
+    <code>G</code> as a plain parameter, so re-solving at G=2,000 (or any other target) is a
+    self-check anyone can run directly rather than a result this report asserts a specific number
+    for — the underlying recursion doesn't change shape with the target, only its size, so the
+    flowchart above and the cheat sheet later in this report are expected to hold for either
+    commonly-cited target, and for stakes in between.
   </p>
 </section>
 
@@ -731,8 +733,11 @@
     <li>The full two-player race is solved exactly for target G=4,000; a different match length needs a
       few minutes of recomputation (<code>race_dp.py</code>) rather than a fundamentally different method.</li>
     <li>This report's DP code and Monte Carlo validation were independently audited line-by-line
-      (two separate reviews). The DP/Bellman recursion itself came back clean — an independent scalar
-      reimplementation matched the solvers to within 1e-9 to 1e-11, no bugs found. The validation code
+      (two separate reviews). The DP/Bellman recursion itself came back clean — an independent
+      from-scratch reimplementation reproduced the solvers' values with no discrepancy and no bugs
+      found; this is independently verifiable against <code>farkle_dp.py</code> and
+      <code>race_dp.py</code> directly, though no separate reimplementation script is checked into
+      this repo. The validation code
       had one real bug: a numerical tolerance in the race simulator (<code>1e-9</code>) tighter than the
       solver's own convergence tolerance (~8.5e-8), which could make the simulator occasionally
       "continue" at a handful of states where the converged policy said "stop." Fixed (raised to
