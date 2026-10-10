@@ -109,12 +109,16 @@
     <tr><td>Uso de <span class="mono">localStorage</span> / <span class="mono">sessionStorage</span></td><td><span class="tag ok">ninguno</span></td></tr>
     <tr><td>Iframes, llamadas a <span class="mono">fetch()</span> o <span class="mono">XMLHttpRequest</span></td><td><span class="tag ok">ninguna</span></td></tr>
     <tr><td>Fuente tipográfica personalizada</td><td>incrustada directamente en la página (base64), sin solicitud en vivo a ningún servicio de fuentes</td></tr>
+    <tr><td>Imagen del retrato del oponente</td><td>una solicitud de imagen del mismo origen (p. ej. <span class="mono">assets/characters/scholar.png</span>), obtenida de los propios archivos de este sitio al elegir o cambiar de oponente; nunca una solicitud de terceros ni de rastreo</td></tr>
     <tr><td>Solicitudes de red al cargar una página, incluyendo empezar una partida y tirar los dados</td><td><span class="tag ok">cero</span> solicitudes a cualquier dominio externo, confirmado capturando tráfico de red real del navegador, no solo leyendo el código fuente</td></tr>
   </table>
   <p style="margin-bottom:0; font-size:0.9rem; color:var(--muted);">
     Las únicas referencias externas en todo este sitio son enlaces normales: a Wikipedia, Ko-fi, GitHub, y a las
     dos iniciativas de privacidad mencionadas más abajo (priva-c.org y 512kb.club). Un enlace solo contacta con
     otro sitio si haces clic en él; no es un recurso que esta página cargue por su cuenta.
+    La única excepción a "nada se carga después de la propia página" es la imagen del retrato del oponente
+    mencionada arriba: es del mismo origen (el dominio de este sitio, no un tercero), no lleva ninguna
+    información identificable y no es rastreo de ningún tipo.
   </p>
 </div>
 

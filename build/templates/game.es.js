@@ -261,6 +261,7 @@ function startMatch(){
   document.getElementById('bannerArea').innerHTML = '';
   document.getElementById('targetLine').textContent = `Carrera a ${target} puntos`;
   document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
+  updateCharacterLayer(oppStrategy);
   document.getElementById('startBtn').textContent = 'Reiniciar partida';
   beginPlayerRoll_UI();
   render();
@@ -307,6 +308,7 @@ function renderIdle(){
   document.getElementById('playerSelected').textContent = 0;
   document.getElementById('oppSelected').textContent = 0;
   document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
+  updateCharacterLayer(oppStrategy);
   document.getElementById('targetLine').textContent = `Carrera a ${target} puntos`;
   document.getElementById('diceRow').innerHTML = '';
   setCupsRollable(false);
@@ -568,6 +570,18 @@ const CHARACTER_NAME = {
   random: 'El Bufón', optimal: 'El Erudito', thresholds: 'El Intendente',
   stop3: 'El Vigía', stop2: 'El Borracho', firstscore: 'El Sacerdote',
 };
+const CHARACTER_PORTRAIT = {
+  random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
+  stop3: 'watchman', stop2: 'drunk', firstscore: 'priest',
+};
+function updateCharacterLayer(oppStrategy){
+  const el = document.getElementById('characterLayer');
+  if (!el) return;
+  const name = CHARACTER_PORTRAIT[oppStrategy];
+  if (!name) return;
+  el.style.backgroundImage = `url('assets/characters/${name}.png')`;
+  el.classList.add('visible');
+}
 
 function runOpponentTurn(){
   document.getElementById('controls').innerHTML = '';

@@ -261,6 +261,31 @@ cleanup pass is needed for those (unlike the background-only and soldier-only as
 Phase 4, which may still need it). Phase 4b is now asset-complete; only Phase 4's
 background/character split stands between this and being implemented.
 
+**Implemented (2026-10-10), both phases together:** the four persona PNGs (Scholar, Drunk,
+Jester, QuarterMaster) really did already have clean alpha transparency (verified: 80-84%
+transparent pixels, no fringing). The soldier-only and priest JPEGs did not (plain JPEG, no
+alpha at all, contrary to what this roadmap entry claimed): flood-filled via a
+border-connected near-white region mask (numpy + `scipy.ndimage.label`), verified clean on a
+checkerboard test backdrop. All six resized to the background's resolution (1100x821, so they
+align with it with zero positioning math needed) and palette-quantized; total 607KB for all
+six, too heavy to embed all at once, so they ship as real files under `assets/characters/`
+and load via a genuine same-origin runtime request (`updateCharacterLayer()` in
+`game.{en,es}.js`, hooked into the existing opponent-selection code path), exactly the
+lazy-loading behavior Phase 1b's own notes anticipated for this asset type. The baked-together
+background+soldier photo is replaced by a real background-only image (freshly generated, not
+the old composite) plus a `.character-layer` div stacked between it and the dice/score-box
+layers via z-index. `about.html`/`about.es.html` updated to disclose the one same-origin image
+request this adds, rather than leaving the "zero network requests" claim to drift from
+reality. Verified via Playwright: all six portraits load with zero failed requests and zero
+external domains, across all four pages, with correct visual alignment.
+
+Also fixed in the course of this: `build.py` wasn't actually reading `assets/style.css` or
+`build/templates/game.{en,es}.js`, despite both existing on disk since the original Phase 1b
+work. The build read literal CSS/JS baked directly into the two HTML templates instead, so
+those two "extracted" files were silent dead weight, any edit to them had zero effect. Fixed
+by wiring real `{{CSS}}` and `{{GAME_JS}}` placeholders through `build.py`, so they're now the
+actual source of truth they were always meant to be.
+
 ---
 
 ## Phase 5: Page-weight optimization

@@ -107,12 +107,15 @@
     <tr><td><span class="mono">localStorage</span> / <span class="mono">sessionStorage</span> usage</td><td><span class="tag ok">none</span></td></tr>
     <tr><td>Iframes, <span class="mono">fetch()</span>, or <span class="mono">XMLHttpRequest</span> calls</td><td><span class="tag ok">none</span></td></tr>
     <tr><td>Custom font</td><td>embedded directly in the page (base64), no live request to any font service</td></tr>
+    <tr><td>Opponent portrait image</td><td>one same-origin image request (e.g. <span class="mono">assets/characters/scholar.png</span>), fetched from this site's own files when you pick or change an opponent; never a third-party or tracking request</td></tr>
     <tr><td>Network requests made when a page loads, including starting a match and rolling dice</td><td><span class="tag ok">zero</span> requests to any external domain, confirmed by capturing real browser network traffic, not just reading the source</td></tr>
   </table>
   <p style="margin-bottom:0; font-size:0.9rem; color:var(--muted);">
     The only external references anywhere on this site are ordinary hyperlinks, to Wikipedia, Ko-fi, GitHub, and the
     two privacy initiatives mentioned further below (priva-c.org and 512kb.club).
     A hyperlink only contacts another site if you click it; it is not a resource this page loads on its own.
+    The one exception to "nothing loads after the page itself" is the opponent portrait image above: it is same-origin
+    (this site's own domain, not a third party), carries no identifying information, and is not tracking of any kind.
   </p>
 </div>
 
