@@ -198,8 +198,7 @@ function rollDice(k){
   return out;
 }
 
-const DIE_GLYPH = {1:'⚀', 2:'⚁', 3:'⚂', 4:'⚃', 5:'⚄', 6:'⚅'};
-function diceGlyphs(dice){ return [...dice].sort((a,b) => a - b).map(d => DIE_GLYPH[d]).join(' '); }
+function sortedDice(dice){ return [...dice].sort((a,b) => a - b).join(', '); }
 
 function bestAction(k, T, actions){
   let best = null, bestV = -1;
@@ -494,7 +493,7 @@ function doPlayerRoll(){
   const dice = rollDice(state.k);
   state.currentDice = dice;
   state.selectedSet = new Set();
-  logLine(`Tiras ${diceGlyphs(dice)}`);
+  logLine(`Tiras [${sortedDice(dice)}]`);
   const {isBust, actions} = enumerateActions(dice);
   if (isBust){
     renderDice(dice, false);
@@ -674,7 +673,7 @@ async function runOpponentTurn(){
 
   for (const d of decisions){
     renderDice(d.dice, false);
-    logLine(`El oponente tiró ${diceGlyphs(d.dice)}`);
+    logLine(`El oponente tiró [${sortedDice(d.dice)}]`);
     await pace();
     logLine(`El oponente guarda ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dados restantes, total del turno ${d.resultingT}`);
     state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
@@ -683,7 +682,7 @@ async function runOpponentTurn(){
   }
   if (bustDice){
     renderDice(bustDice, false);
-    logLine(`El oponente tiró ${diceGlyphs(bustDice)}`);
+    logLine(`El oponente tiró [${sortedDice(bustDice)}]`);
     await pace();
   }
   if (points > 0){

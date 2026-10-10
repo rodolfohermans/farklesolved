@@ -462,15 +462,37 @@ sat unimplemented until the user noticed the game still showed bracketed numbers
 directly. Recorded here now specifically so a dropped item is visible and traceable instead
 of silently vanishing a second time.
 
-**Implemented (2026-10-10):** `DIE_GLYPH` (U+2680-U+2685, the standard Unicode die-face block)
-and a `diceGlyphs(dice)` helper, in both languages. Replaces the bracketed-number roll display
-in all three places it appeared (the player's own roll, the opponent's per-decision roll
-during Phase 3's animation, and the opponent's bust roll). Verified the glyphs actually render
-as proper pip patterns in this environment (not a placeholder box) by rendering them at a
-large test size first, since the log text's small font size made that hard to confirm directly
-from the in-game screenshot. Also removed a related piece of dead code found in the process:
-`playOpponentTurn`'s internal `log` array was built and returned but never actually read by
-any caller once Phase 3's animation started building its own log lines directly; removed
-rather than left as silent dead weight.
+**Attempted, then reverted (2026-10-10).** First pass: added `DIE_GLYPH` (U+2680-U+2685, the
+standard Unicode die-face block) and a `diceGlyphs(dice)` helper, replacing the bracketed-number
+roll display, then extended the same idea to action labels ("three 5s" -> "three ⚄"). My own
+verification of this was wrong twice over: I confirmed legibility by rendering the glyphs at
+60px on an isolated test page, which doesn't reflect the site's real ~15px log text size or its
+real font stack, and I later screenshotted the actual game believing I'd confirmed both broken
+and (after a fix attempt) fixed, without re-running `just build` first, so at least one of those
+checks was against a stale page.
+
+When the user caught the glyphs still weren't rendering as dice, a focused independent review
+(Fable 5, scoped to only this issue) corrected the diagnosis: it was never a missing-glyph or
+font-fallback problem (DejaVu Sans genuinely has these glyphs, and Chromium's own per-character
+font resolution, checked via `CSS.getPlatformFontsForNode`, confirmed it was actually selected
+and used). The real problem is device pixel density: at standard 1x desktop scaling the glyphs'
+internal pip detail is sub-pixel and unreadable; a size-sweep test showed legibility only
+starting around 32-40px, far too large for inline log text. At 2x-3x (phones, Retina displays)
+the same glyphs render cleanly. Since a large share of desktop visitors run at 1x, this is a
+real cross-platform limitation, not an artifact of the sandboxed test environment, and no
+practical font-size bump fixes it.
+
+Reverted both the roll-line and action-label glyph changes back to plain numerals, keeping one
+real improvement that came out of the attempt: the roll display now shows dice sorted (e.g.
+"[1, 1, 2, 4, 4, 5]" instead of roll order), so pairs and triples are visually grouped, which
+doesn't depend on glyph rendering at all. The `.log` font-size bump from this same work (0.86rem
+to 0.94rem) also stands independently and was kept.
+
+A same-origin inline `<img>` approach, reusing the site's own dice sprite PNGs instead of
+relying on font glyph coverage, would sidestep this entirely and was noted as a sound future
+option by the reviewer, scoped only to the roll line (never the tiny action-label contexts,
+where even a 40px requirement is unworkable) and built with real DOM nodes rather than switching
+`logLine()` to `innerHTML`. Not attempted here; recorded as a legitimate follow-up, not a
+silent drop.
 
 ---
