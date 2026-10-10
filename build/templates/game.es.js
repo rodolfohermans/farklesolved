@@ -199,7 +199,7 @@ function rollDice(k){
 }
 
 const DIE_GLYPH = {1:'⚀', 2:'⚁', 3:'⚂', 4:'⚃', 5:'⚄', 6:'⚅'};
-function diceGlyphs(dice){ return dice.map(d => DIE_GLYPH[d]).join(' '); }
+function diceGlyphs(dice){ return [...dice].sort((a,b) => a - b).map(d => DIE_GLYPH[d]).join(' '); }
 
 function bestAction(k, T, actions){
   let best = null, bestV = -1;

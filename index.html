@@ -75,7 +75,7 @@
   .turn-info b{font-family:var(--pixel); font-size:0.9rem; color:var(--gold);}
   .actions{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
   .actions button{flex:1 1 auto; min-width:180px; text-align:left;}
-  .log{font-size:0.86rem; color:var(--muted); max-height:160px; overflow-y:auto; border-top:2px dashed var(--line); padding-top:8px; margin-top:10px;}
+  .log{font-size:0.94rem; color:var(--muted); max-height:160px; overflow-y:auto; border-top:2px dashed var(--line); padding-top:8px; margin-top:10px;}
   .log div{margin:3px 0;}
   .review{border-left:4px solid var(--accent3); background:rgba(227,179,92,0.08); border-radius:0 6px 6px 0; padding:14px 16px; margin:10px 0;}
   .review.good{border-color:var(--good); background:rgba(74,124,89,0.1);}
@@ -551,7 +551,7 @@ function rollDice(k){
 }
 
 const DIE_GLYPH = {1:'⚀', 2:'⚁', 3:'⚂', 4:'⚃', 5:'⚄', 6:'⚅'};
-function diceGlyphs(dice){ return dice.map(d => DIE_GLYPH[d]).join(' '); }
+function diceGlyphs(dice){ return [...dice].sort((a,b) => a - b).map(d => DIE_GLYPH[d]).join(' '); }
 
 function bestAction(k, T, actions){
   let best = null, bestV = -1;
