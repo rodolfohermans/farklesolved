@@ -157,8 +157,17 @@ layer is what makes per-opponent art viable at all.
 Each opponent persona (Scholar, Priest, Drunkard, Jester, Watchman, Quartermaster) gets its
 own portrait instead of sharing one soldier image.
 
-**How:** map the already-available Priest and soldier-only portraits to their matching
-personas; generate/source the rest when this is picked up.
+**How:** map the already-available portraits to their matching personas; generate/source the
+rest when this is picked up. On disk and ready to use:
+- `Downloads/Scholar.png` — The Scholar
+- `Downloads/Drunk.png` — The Drunkard
+- `Downloads/Jester.png` — The Jester
+- `..._priest.jpeg` — The Priest
+- `..._soldier-only.jpeg` — generic/fallback, or The Watchman
+
+Still missing: The Quartermaster. All five available portraits already have clean transparent
+backgrounds, so no flood-fill cleanup pass is needed for those (unlike the background-only and
+soldier-only assets noted in Phase 4, which may still need it).
 
 ---
 
