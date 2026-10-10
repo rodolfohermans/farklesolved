@@ -596,7 +596,7 @@ function render(){
   const gapOpp = state.target - state.scores.opponent;
   if (state.turnOwner==='player' && (gapYou <= 1000 || gapOpp <= 1000)){
     hintEl.style.display = 'block';
-    hintEl.textContent = '⚠ Zona de final de partida (tú o tu oponente a menos de ~1000 del objetivo): el consejo exacto de abajo es ciego a la carrera. El juego óptimo que sí tiene en cuenta la carrera dice que nunca guardes progreso parcial aquí: sigue tirando a por la victoria exacta. Consulta el informe para más detalles.';
+    hintEl.textContent = '⚠ Zona de final de partida (tú o tu oponente a menos de ~1000 del objetivo): el consejo exacto de abajo es ciego a la carrera. El juego óptimo que sí tiene en cuenta la carrera suele decir que sigas tirando a por la victoria exacta, salvo cuando vas ganando y te quedan entre 1 y 3 dados, donde lo correcto suele ser guardar pronto. Consulta el informe para la tabla exacta.';
   } else {
     hintEl.style.display = 'none';
   }

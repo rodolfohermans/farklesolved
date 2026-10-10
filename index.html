@@ -595,7 +595,7 @@ function render(){
   const gapOpp = state.target - state.scores.opponent;
   if (state.turnOwner==='player' && (gapYou <= 1000 || gapOpp <= 1000)){
     hintEl.style.display = 'block';
-    hintEl.textContent = '⚠ End-game zone (you or your opponent within ~1000 of the target): the exact single-turn coaching below is race-blind. Real race-aware play here says never bank partial progress — push for the exact win. See the report for details.';
+    hintEl.textContent = '⚠ End-game zone (you or your opponent within ~1000 of the target): the exact single-turn coaching below is race-blind. Real race-aware play here usually means push for the exact win, except when you are ahead with only 1 to 3 dice left, where banking early is usually correct. See the report for the exact table.';
   } else {
     hintEl.style.display = 'none';
   }
