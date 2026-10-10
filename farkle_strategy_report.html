@@ -229,8 +229,7 @@
     fully-detailed exact solve below targets G=4,000; <code>race_dp.py</code> takes the target
     <code>G</code> as a plain parameter, so re-solving at G=2,000 (or any other target) is a
     self-check anyone can run directly rather than a result this report asserts a specific number
-    for — the underlying recursion doesn't change shape with the target, only its size, so the
-    flowchart above and the cheat sheet later in this report are expected to hold for either
+    for — the flowchart above and the cheat sheet later in this report are intended for either
     commonly-cited target, and for stakes in between.
   </p>
 </section>
@@ -734,8 +733,8 @@
       few minutes of recomputation (<code>race_dp.py</code>) rather than a fundamentally different method.</li>
     <li>This report's DP code and Monte Carlo validation were independently audited line-by-line
       (two separate reviews). The DP/Bellman recursion itself came back clean — an independent
-      from-scratch reimplementation reproduced the solvers' values with no discrepancy and no bugs
-      found; this is independently verifiable against <code>farkle_dp.py</code> and
+      from-scratch reimplementation reproduced the solvers' values to floating-point precision, no
+      bugs found; this is independently verifiable against <code>farkle_dp.py</code> and
       <code>race_dp.py</code> directly, though no separate reimplementation script is checked into
       this repo. The validation code
       had one real bug: a numerical tolerance in the race simulator (<code>1e-9</code>) tighter than the
