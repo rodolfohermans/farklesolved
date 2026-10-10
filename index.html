@@ -122,14 +122,16 @@
   .cup-sprite.rollable:hover{transform:scale(1.15) rotate(-6deg);}
   .cup-sprite.rollable:active{transform:scale(0.95) rotate(8deg);}
   @media (max-width:560px){
-    .corner-score{width:96px; font-size:0.85em;}
-    .corner-score .val{font-size:0.95rem;}
+    .corner-score{width:112px; padding:6px 8px; font-size:0.85em;}
+    .corner-score .stat-row{font-size:0.5rem;}
+    .corner-score .stat-row .stat-val{font-size:0.62rem;}
+    .corner-score .stat-row.total-row .stat-val{font-size:0.7rem;}
     .cup-sprite{display:none;}
     .table-scene{aspect-ratio:auto; min-height:500px; background-color:#1a1008; background-size:contain; background-repeat:no-repeat;}
     .die{width:56px; height:56px;}
     .dice-subrow{gap:4px;}
     .dice-subrow-offset{margin-top:-14px; margin-left:30px;}
-    .table-dice-area{padding-left:120px;}
+    .table-dice-area{padding-left:136px;}
   }
 </style>
 </head>
