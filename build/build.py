@@ -34,7 +34,7 @@ def build_dice_sprites_js():
     return "\n".join(lines)
 
 
-def build_one(page, dice_sprites_js, dp_data_json, css, font_b64, bg_b64):
+def build_one(page, dice_sprites_js, dp_data_json, race_data_json, css, font_b64, bg_b64):
     template_path = TEMPLATES / f"template.{page['template']}.html"
     html = template_path.read_text(encoding="utf-8")
     game_js = (TEMPLATES / f"game.{page['template']}.js").read_text(encoding="utf-8")
@@ -49,6 +49,7 @@ def build_one(page, dice_sprites_js, dp_data_json, css, font_b64, bg_b64):
     html = html.replace("{{GAME_JS}}", game_js)
     html = html.replace("{{DICE_SPRITES_JS}}", dice_sprites_js)
     html = html.replace("{{DP_DATA_JSON}}", dp_data_json)
+    html = html.replace("{{RACE_DATA_JSON}}", race_data_json)
     html = html.replace("{{CSS}}", css)
     html = html.replace("{{FONT_BASE64}}", font_b64)
     html = html.replace("{{BACKGROUND_BASE64}}", bg_b64)
@@ -66,12 +67,13 @@ def main():
     pages = json.loads((ROOT / "build" / "pages.json").read_text(encoding="utf-8"))
     dice_sprites_js = build_dice_sprites_js()
     dp_data_json = (ASSETS / "dp-data.json").read_text(encoding="utf-8")
+    race_data_json = (ASSETS / "race-data.json").read_text(encoding="utf-8")
     css = (ASSETS / "style.css").read_text(encoding="utf-8")
     font_b64 = base64.b64encode((ASSETS / "pixelfont.woff2").read_bytes()).decode("ascii")
     bg_b64 = base64.b64encode((ASSETS / "background.jpg").read_bytes()).decode("ascii")
 
     for page in pages:
-        build_one(page, dice_sprites_js, dp_data_json, css, font_b64, bg_b64)
+        build_one(page, dice_sprites_js, dp_data_json, race_data_json, css, font_b64, bg_b64)
 
 
 if __name__ == "__main__":

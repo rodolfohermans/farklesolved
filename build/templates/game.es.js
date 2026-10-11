@@ -10,6 +10,31 @@ function shouldContinue(k, T){
   return vLookup(k, T) > T + 1e-6;
 }
 
+/* ===================== DATOS DE ESTRATEGIA CON CARRERA (El Estratega) ===================== */
+// Tabla compacta de umbrales exactos a partir del juego de carrera resuelto
+// en race_dp.py (ver race_aware_opponent.py), resuelto solo para G=4000: la
+// superficie de valor completa para cualquier objetivo pesaría megabytes por
+// objetivo, lo que el compromiso de peso de página de este sitio descarta.
+// Con cualquier otro objetivo de partida, El Estratega recurre a la tabla del
+// Erudito, ciega a la carrera (ver playOpponentTurn más abajo), en vez de
+// aproximar en silencio.
+const RACE = (function(){
+  const el = document.getElementById('race-data');
+  if (!el || !el.textContent.trim()) return null;
+  const d = JSON.parse(el.textContent);
+  const bin = atob(d.data_b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  d.thr = bytes;
+  return d;
+})();
+function raceThreshold(i, j, k){
+  const ci = Math.min(Math.max(i, 0), RACE.Nx - 1);
+  const cj = Math.min(Math.max(j, 0), RACE.Nx - 1);
+  const stored = RACE.thr[ci * RACE.Nx * 7 + cj * 7 + k];
+  return stored === 0 ? -1 : (stored - 1) * RACE.STEP;
+}
+
 /* ============================== SCORING ENGINE (ported from farkle_kcd.py) ============================== */
 const THREE_KIND_VALUE = {1:1000, 2:200, 3:300, 4:400, 5:500, 6:600};
 function groupValue(face, count){ return THREE_KIND_VALUE[face] * Math.pow(2, count - 3); }
@@ -254,6 +279,35 @@ function playOpponentTurn(strategy){
       T += chosen.val; k = kp;
       const minDice = strategy === 'stop3' ? 3 : 2;
       cont = k >= minDice;
+    } else if (strategy === 'raceaware'){
+      // Misma preferencia consciente de la victoria que El Erudito, ver arriba.
+      const winningAction = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
+      if (winningAction){
+        const kp = winningAction.bc === k ? 6 : k - winningAction.bc;
+        chosen = winningAction;
+        T += chosen.val; k = kp;
+        cont = false;
+      } else {
+        // Qué dados guardar se elige con la tabla de un solo turno, ciega a
+        // la carrera (esa elección es casi enteramente sobre las
+        // posibilidades de este turno); solo la decisión de seguir o parar
+        // usa la puntuación del rival, mediante la tabla exacta de umbrales
+        // de carrera de arriba. Verificado por simulación: es
+        // estadísticamente indistinguible de usar la función de valor
+        // completa de carrera también para elegir los dados (49.87% frente a
+        // 50.13% en partidas directas sobre 20.000 partidas), con una
+        // fracción del tamaño de datos — ver race_aware_opponent.py.
+        chosen = bestAction(k, T, actions);
+        T += chosen.val; k = chosen.kp;
+        if (RACE && state.target === RACE.G){
+          const i = Math.floor(oppPreTurnScore / STEP);
+          const j = Math.floor(state.scores.player / STEP);
+          const th = raceThreshold(i, j, k);
+          cont = th >= 0 && T <= th;
+        } else {
+          cont = shouldContinue(k, T);
+        }
+      }
     } else { // firstscore
       chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
@@ -617,14 +671,16 @@ function finishPlayerTurn(points){
   render();
 }
 
-const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore'];
+const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware'];
 const CHARACTER_NAME = {
   random: 'El Bufón', optimal: 'El Erudito', thresholds: 'El Intendente',
   stop3: 'El Vigía', stop2: 'El Borracho', firstscore: 'El Sacerdote',
+  raceaware: 'El Estratega',
 };
 const CHARACTER_PORTRAIT = {
   random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
   stop3: 'watchman', stop2: 'drunk', firstscore: 'priest',
+  raceaware: 'tactician',
 };
 function updateCharacterLayer(oppStrategy){
   const el = document.getElementById('characterLayer');

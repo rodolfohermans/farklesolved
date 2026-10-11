@@ -10,6 +10,30 @@ function shouldContinue(k, T){
   return vLookup(k, T) > T + 1e-6;
 }
 
+/* ===================== RACE-AWARE DATA (The Tactician) ===================== */
+// Compact exact-threshold table from race_dp.py's solved race-to-target game
+// (see race_aware_opponent.py), solved only for G=4000 -- the full value-
+// function surface needed for arbitrary targets would be megabytes per
+// target, which this site's page-weight commitment rules out. At any other
+// match target the Tactician falls back to the Scholar's score-blind table
+// (handled in playOpponentTurn below), rather than silently approximate.
+const RACE = (function(){
+  const el = document.getElementById('race-data');
+  if (!el || !el.textContent.trim()) return null;
+  const d = JSON.parse(el.textContent);
+  const bin = atob(d.data_b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  d.thr = bytes;
+  return d;
+})();
+function raceThreshold(i, j, k){
+  const ci = Math.min(Math.max(i, 0), RACE.Nx - 1);
+  const cj = Math.min(Math.max(j, 0), RACE.Nx - 1);
+  const stored = RACE.thr[ci * RACE.Nx * 7 + cj * 7 + k];
+  return stored === 0 ? -1 : (stored - 1) * RACE.STEP;
+}
+
 /* ============================== SCORING ENGINE (ported from farkle_kcd.py) ============================== */
 const THREE_KIND_VALUE = {1:1000, 2:200, 3:300, 4:400, 5:500, 6:600};
 function groupValue(face, count){ return THREE_KIND_VALUE[face] * Math.pow(2, count - 3); }
@@ -254,6 +278,34 @@ function playOpponentTurn(strategy){
       T += chosen.val; k = kp;
       const minDice = strategy === 'stop3' ? 3 : 2;
       cont = k >= minDice;
+    } else if (strategy === 'raceaware'){
+      // Same win-aware action preference as the Scholar, see above.
+      const winningAction = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
+      if (winningAction){
+        const kp = winningAction.bc === k ? 6 : k - winningAction.bc;
+        chosen = winningAction;
+        T += chosen.val; k = kp;
+        cont = false;
+      } else {
+        // Which dice to bank is still chosen from the score-blind single-turn
+        // table (that choice is almost entirely about this turn's own
+        // prospects); only the continue/stop call uses the opponent's score,
+        // via the exact race-aware threshold table above. Verified by
+        // simulation to be statistically indistinguishable from reading the
+        // full race-aware value function for the dice choice too (49.87% vs
+        // 50.13% head-to-head over 20,000 games), at a fraction of the data
+        // size -- see race_aware_opponent.py.
+        chosen = bestAction(k, T, actions);
+        T += chosen.val; k = chosen.kp;
+        if (RACE && state.target === RACE.G){
+          const i = Math.floor(oppPreTurnScore / STEP);
+          const j = Math.floor(state.scores.player / STEP);
+          const th = raceThreshold(i, j, k);
+          cont = th >= 0 && T <= th;
+        } else {
+          cont = shouldContinue(k, T);
+        }
+      }
     } else { // firstscore
       chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
@@ -617,14 +669,16 @@ function finishPlayerTurn(points){
   render();
 }
 
-const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore'];
+const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware'];
 const CHARACTER_NAME = {
   random: 'The Jester', optimal: 'The Scholar', thresholds: 'The Quartermaster',
   stop3: 'The Watchman', stop2: 'The Drunkard', firstscore: 'The Priest',
+  raceaware: 'The Tactician',
 };
 const CHARACTER_PORTRAIT = {
   random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
   stop3: 'watchman', stop2: 'drunk', firstscore: 'priest',
+  raceaware: 'tactician',
 };
 function updateCharacterLayer(oppStrategy){
   const el = document.getElementById('characterLayer');

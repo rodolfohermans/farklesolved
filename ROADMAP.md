@@ -495,6 +495,77 @@ where even a 40px requirement is unworkable) and built with real DOM nodes rathe
 `logLine()` to `innerHTML`. Not attempted here; recorded as a legitimate follow-up, not a
 silent drop.
 
+## Phase 10: Race-aware opponent ("The Tactician")
+
+Requested 2026-10-11 after the opponent-strategy win-rate matrix and forum research (below)
+surfaced a real gap: Method.gg's KCD2 guide and others independently recommend conditioning the
+continue/bank decision on the live score gap ("push when behind, bank when ahead"), which is
+exactly what `race_dp.py`'s exact race-to-target solve already proves optimal, but none of the
+five existing opponent personas use it. All five only ever read the score-blind single-turn table
+(`farkle_dp.py`) or simpler heuristics; the only score-awareness any of them has is the universal
+"stop once this turn already secures the match" override.
+
+**Investigated multiple flavors before implementing anything (explicit instruction: find a good
+version, don't strawman it):**
+
+1. **Naive forum heuristic**, implemented literally ("push while behind, bank the instant not
+   behind," no magnitude awareness): loses badly to the Scholar, 26.7% win rate, seat-balanced.
+   Confirmed strawman, not shipped. The failure mode: early in a race, being behind by one turn's
+   worth of points is nearly meaningless, since both sides have many turns left; playing reckless
+   the whole match on that signal is just worse banking, it ignores that the real exact policy's
+   deviation from score-blind play is concentrated almost entirely near the endgame.
+2. **Full exact** (bank-which-dice AND continue/stop both read from the solved race value
+   function `U_all`, mirroring `race_compare.py`'s `play_turn_race_aware`): the true optimum, but
+   would require embedding the full value-function surface (megabytes per target) to ship,
+   ruled out on page-weight grounds alone.
+3. **Hybrid exact (shipped)**: which dice to bank each roll stays on the single-turn DP table
+   (same choice the Scholar already makes — this is almost entirely about the turn's own
+   prospects); only the continue/stop decision reads the opponent's score, via a compact
+   per-(own-score-bucket, opponent-score-bucket, dice-remaining) exact threshold table derived
+   from `U_all`. Verified by simulation to be statistically indistinguishable from the full exact
+   policy head-to-head (49.87% vs 50.13% over 20,000 games) — the simplification costs nothing
+   measurable, at a fraction of the data size (44.8KB raw / ~60KB base64 vs megabytes).
+4. **A zero-table calibrated heuristic was also explored and rejected.** Queried the exact
+   threshold table directly across representative (own score, opponent score, dice-remaining)
+   states before attempting any formula. Found the opponent-dependence is highly non-uniform (huge
+   at low dice-remaining/high bust-risk states, often negligible at a fresh 6-dice roll regardless
+   of score gap) and NOT reducible to a function of the score gap alone (sharp, nonlinear jumps at
+   specific gap values, not a smooth relationship) — see `race_aware_opponent.py`'s exploratory
+   output. A hand-tuned formula would itself need real iterative calibration to avoid becoming a
+   second strawman, for an already-modest prize (next point): decided not worth it, shipped the
+   table-based hybrid instead.
+
+**Headline result**: the shipped Tactician beats the Scholar 52.3% of the time, seat-balanced —
+a real, measured, but modest edge, not a dramatic one. This is the correct and expected size of
+the effect, not a sign of a weak implementation: most of a race happens far from the target,
+where score-blind and score-aware play agree almost every turn.
+
+**Scope limit, disclosed rather than silently approximated**: the exact threshold table is solved
+and embedded only for the site's default 4,000-point target (the target already used for this
+site's other published race-DP statistic, the 55.71%/44.29% first-mover split). Embedding exact
+tables for every preset target (1500/2000/4000/5000) plus arbitrary custom targets was rejected:
+each target's table scales with the target itself (the 4,000 table alone is 44.8KB raw), and
+`race_dp.py`'s solve itself takes ~2-3 minutes even in vectorized Python/numpy, nowhere near fast
+enough to solve on-demand in the browser for a custom target. At any match target other than
+4,000, the Tactician falls back to playing identically to the Scholar, and this is stated directly
+in its selector description in the UI, not hidden.
+
+**Page-weight impact**: measured before/after, not assumed. Game pages grew from ~434KB to
+~508KB (headroom inside the 512KB Club's Blue tier shrank from comfortable to thin). `about.html`,
+`about.es.html`, and `README.md`'s size claims were updated to the re-measured figures as part of
+this change, per this project's standing practice of not leaving a stale measurement once the
+underlying fact changes.
+
+Named "The Tactician" rather than "The Gambler" (the obvious first choice) after noticing the
+name mismatch: this persona is a cold, exact, score-tracking optimizer, the opposite of the
+superstition/myth associations "Gambler" carries (gambler's fallacy, hot-hand fallacy). "Gambler"
+was left open for a future myth-driven persona instead -- see Phase 12.
+
+Portrait is a placeholder (`assets/characters/tactician.png`, plain text label, not real art) by
+explicit agreement with the project owner, who will supply real art later on this feature branch.
+
+Built on branch `feature/gambler-race-aware`, not master, by explicit instruction, pending that art.
+
 ## Phase 11 (future, not scheduled): Loaded-dice bias measurement
 
 Raised 2026-10-11 while researching opponent strategies and other sites' dice-game content:
@@ -518,5 +589,100 @@ assume fair dice and would need their own re-derivation to stay exact under bias
 for a quick measurement), run head-to-head at a few bias magnitudes and a few strategy-skill
 gaps, and reported as win-rate shift vs. bias magnitude. This is a measurement/report question,
 not necessarily a new opponent persona or site feature.
+
+## Phase 12 (future, not scheduled): myth-driven opponent persona
+
+Raised 2026-10-11 during the Phase 10 race-aware opponent work: the name "Gambler" evokes
+classic gambling cognitive biases (gambler's fallacy, hot-hand fallacy, loss-chasing), which are
+the mirror opposite of what Phase 10 actually built (a cold, exact, score-tracking optimizer).
+Decided to name Phase 10's persona "The Tactician" instead and leave "Gambler" open for this.
+
+A myth-driven persona would need to track history no current persona tracks at all (every
+existing persona, including the Tactician, decides purely from the current k/T and, now, the
+live score gap — none have memory of past rolls or past turns):
+
+- **Gambler's fallacy**: push harder than justified on the turn right after a bust, believing
+  a win is "due" — independent of the (unchanged) actual odds.
+- **Hot-hand fallacy**: push further than optimal *within* a turn after several consecutive
+  successful banks, as if recent success predicts the next roll.
+- **Loss-chasing**: a superstitious cousin of the Tactician's race-awareness — overcorrects when
+  behind (pushes past what the math justifies), rather than the exact right amount more.
+
+Not implemented. Would need: per-match streak/history state (last turn's outcome, this turn's
+consecutive successful-bank count) threaded into a new strategy branch in `playOpponentTurn`,
+and its own portrait/name once scoped.
+
+**Research-and-testing methodology (added 2026-10-11, don't skip straight to implementation):**
+before writing any shipped persona, implement each fallacy mechanic above as its own standalone
+simulatable policy (same pattern as `race_aware_opponent.py`'s three-way naive/hybrid/full-exact
+comparison), then:
+
+1. Sweep the fallacy's magnitude parameter (e.g. how much the gambler's-fallacy push intensifies
+   per consecutive bust, or how many consecutive successful banks trigger the hot-hand escalation)
+   across a range, not one guessed value — a too-weak setting is indistinguishable from an
+   existing persona, a too-strong one degenerates into something the Drunkard already covers.
+2. Simulate each candidate against the full existing roster (Scholar through Tactician) and
+   measure whether its win-rate profile and, ideally, its qualitative behavior (bust rate,
+   mean turn score, how its results differ turn-by-turn) are STATISTICALLY DISTINGUISHABLE from
+   the nearest existing persona, not just a renamed Drunkard/Priest with extra steps.
+3. Only ship the specific fallacy mechanic(s) that clear that bar. If gambler's-fallacy and
+   hot-hand both turn out statistically indistinguishable from existing personas at every
+   magnitude tried, that's a legitimate negative result worth recording, not a reason to force
+   a persona into existence anyway.
+4. This mirrors the Phase 10 lesson directly: the "naive race-aware" heuristic was tested and
+   found to be a strawman (26.7% vs Scholar) before anything was shipped; the same discipline
+   applies here, given these are explicitly *irrational* mechanics being deliberately added, not
+   mathematically-grounded ones like Phase 10's.
+
+## Phase 13 (future, not scheduled): "The Elder" -- near-optimal play with misread dice
+
+Raised 2026-10-11: a character with a near-optimal decision policy but a perceptual handicap
+(poor eyesight), as opposed to every existing persona's flaws being purely behavioral/decision-
+based. Researched and grounded in real perceptual psychology rather than invented arbitrarily:
+
+- **Pip-misreading pairs.** Dice layouts aren't arbitrary: 3's layout is 2's diagonal pair plus
+  one added center pip; 5 is 4's four corners plus one added center pip. Under blur/low acuity,
+  that added center pip is exactly the low-contrast fine detail that disappears first, so 2<->3
+  and 4<->5 are the well-grounded confusion pairs (same "add/remove one center pip" relationship
+  in both cases). 6 is structurally different (two parallel columns, no center dot) rather than
+  "5 plus something," so it's more robustly distinguishable; a 5<->6 confusion channel, if
+  modeled at all, should be much rarer than 2<->3/4<->5, not equally likely.
+- **1 is essentially never misread.** This follows from subitizing (Kaufman et al. 1949 and a
+  large literature since): humans perceive 1-3 items instantly and accurately without counting;
+  4+ requires actual serial counting, which is where acuity loss and fatigue cause errors. This
+  also means 2 should misread less often than 3 does (2 is still within/at the edge of the
+  subitizing range).
+- **Missing a straight (1-5, 2-6, full 1-6) is a separate, unrelated mechanism** worth modeling
+  independently: not a per-die misread but a failure to perform the extra integration step of
+  scanning all 5-6 dice for a consecutive run. Closer to inattentional blindness (missing a
+  fully-visible but unattended-to pattern) than to low acuity, and should be an independent
+  probability, not derived from the pip-confusion model.
+- **Decision: a new character, not layered onto the Drunkard.** The Drunkard already fully
+  occupies the behavioral-flaw niche (poor stopping discipline); stacking a perceptual flaw onto
+  it conflates two different phenomena and risks reading as piling impairments onto one trope.
+  It would also silently change the Drunkard's already-measured behavior from the Phase 10
+  win-rate matrix (opponent_strategy_matrix.py) without that matrix being re-run, an honesty
+  problem this project takes seriously elsewhere. Proposed name: "The Elder" (age-related vision
+  decline -- presbyopia/cataracts -- a sympathetic, extremely common, and distinct real
+  phenomenon from the drinking angle already covered).
+
+Requested design constraint: the misperception should mostly be invisible, surfacing only when
+it would cause an illegal move, at which point it's revealed/corrected narratively. This is the
+most complex persona mechanic scoped so far and was NOT attempted in this session (explicitly
+deferred to keep the Phase 10 Tactician work from being left half-wired). It would need:
+
+1. A "perceived dice" array: sample a confusion draw per die (each face has a small chance of
+   being misread as its confusion-paired neighbor; 1 essentially never misreads).
+2. Run the decision logic (near-optimal, i.e. close to the Scholar/Tactician's action choice)
+   against the PERCEIVED dice to pick an intended action.
+3. Check whether that intended (bc, val) action is actually legal against the REAL dice (i.e.
+   present in `enumerate_actions(real_dice)`'s output) -- not guaranteed, since the perceived
+   combo may not exist on the real roll.
+4. If illegal: reveal narratively (a log line, e.g. "He reaches for two 3s, squints -- only one
+   was actually a 3.") and substitute the nearest legal action on the real dice, rather than
+   silently proceeding on a fiction.
+5. If legal (misperception happened not to change the outcome): proceed silently, no reveal.
+6. Independently, with some probability, drop straight-based actions from the considered action
+   set entirely (the inattention mechanic), regardless of whether any pip-misread occurred.
 
 ---
