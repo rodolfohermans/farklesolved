@@ -392,7 +392,7 @@ function playOpponentTurn(strategy){
       } else {
         const winningReal = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
         chosen = winningReal || bestAction(k, T, actions);
-        revealMsg = `He reaches for ${intended.label} — a closer look says otherwise, and he banks ${chosen.label} instead.`;
+        revealMsg = `She reaches for ${intended.label} — a closer look says otherwise, and she banks ${chosen.label} instead.`;
       }
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
       T += chosen.val; k = kp;

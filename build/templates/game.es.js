@@ -183,7 +183,7 @@ function straightOnlyActionKeys(dice){
   return new Set(actions.filter(a => !nonStraight.has(a.bc+','+a.val)).map(a => a.bc+','+a.val));
 }
 
-/* ===================== MODELO DE PERCEPCIÓN (El Anciano) =====================
+/* ===================== MODELO DE PERCEPCIÓN (La Anciana) =====================
 Confusiones adyacentes en número de puntos, basadas en el diseño compartido
 de las caras del dado: el 3 es la pareja diagonal del 2 más un punto central
 añadido; el 5 son las cuatro esquinas del 4 más un punto central añadido --
@@ -780,7 +780,7 @@ const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore'
 const CHARACTER_NAME = {
   random: 'El Bufón', optimal: 'La Erudita', thresholds: 'El Intendente',
   stop3: 'El Vigía', stop2: 'El Borracho', firstscore: 'El Sacerdote',
-  raceaware: 'El Estratega', gambler: 'El Apostador', elder: 'El Anciano',
+  raceaware: 'El Estratega', gambler: 'El Apostador', elder: 'La Anciana',
 };
 const CHARACTER_PORTRAIT = {
   random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
