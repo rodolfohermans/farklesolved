@@ -495,4 +495,28 @@ where even a 40px requirement is unworkable) and built with real DOM nodes rathe
 `logLine()` to `innerHTML`. Not attempted here; recorded as a legitimate follow-up, not a
 silent drop.
 
+## Phase 11 (future, not scheduled): Loaded-dice bias measurement
+
+Raised 2026-10-11 while researching opponent strategies and other sites' dice-game content:
+forum/guide discussion of this minigame is dominated by *loaded dice selection* (which of the
+game's biased/trick dice to carry), not turn-by-turn play strategy, the thing farklesolved.com
+actually solves. The site's model deliberately excludes loaded dice entirely (standard fair
+6-sided dice only), which is correct for the exact single-turn and race DP as published, but
+leaves an open question worth quantifying rather than just asserting is "probably small":
+
+- How much does giving ONE side a biased/loaded die set shift the race win probability, holding
+  both players' play strategy fixed?
+- Does a strictly better play strategy (e.g. the exact race-aware policy, once implemented, or
+  even just the Scholar) still beat a weaker strategy (e.g. Drunkard, Priest) when the weaker
+  side is the one using loaded dice? i.e. how large a dice-bias advantage would it take to
+  overcome a given strategy-skill gap?
+
+Not implemented. Would need: a biased per-face roll distribution (not uniform 1/6 per face,
+calibrated to whatever bias magnitude is being tested) substituted into the Monte Carlo roll
+step of `farkle_sim.py`/`farkle_race.py`-style simulations (the exact DP tables themselves
+assume fair dice and would need their own re-derivation to stay exact under bias, out of scope
+for a quick measurement), run head-to-head at a few bias magnitudes and a few strategy-skill
+gaps, and reported as win-rate shift vs. bias magnitude. This is a measurement/report question,
+not necessarily a new opponent persona or site feature.
+
 ---
