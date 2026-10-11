@@ -439,6 +439,10 @@ function startMatch(){
     bankedGroups: {player: [], opponent: []}, // this turn's banked dice, grouped by scoring choice
     gameOver: false,
     hasRolled: false, // no dice rolled yet this match -- changing settings needs no confirmation
+    // Running match-long decision tally, fed by renderReview() every turn for
+    // both sides (same per-decision verdicts already used for the live
+    // per-turn review text, just accumulated instead of discarded).
+    tally: {player: {correct: 0, graded: 0}, opponent: {correct: 0, graded: 0}},
   };
   document.getElementById('reviewArea').innerHTML = '';
   document.getElementById('bannerArea').innerHTML = '';
@@ -902,6 +906,27 @@ function endGame(winner){
   } else {
     el.innerHTML = `<div class="banner lose">Opponent wins. ${state.scores.opponent} – ${state.scores.player}</div>`;
   }
+  el.innerHTML += renderAccuracySummary(winner);
+}
+
+// Match-long decision accuracy for both sides, fed by the same per-decision
+// verdicts renderReview() already computes and shows every turn (just
+// accumulated across the whole match instead of discarded after each one).
+// Skipped entirely if either side has zero gradable decisions (e.g. a very
+// short match) -- rather than show a misleading 0%.
+function renderAccuracySummary(winner){
+  const p = state.tally.player, o = state.tally.opponent;
+  if (p.graded === 0 || o.graded === 0) return '';
+  const playerPct = Math.round(100 * p.correct / p.graded);
+  const oppPct = Math.round(100 * o.correct / o.graded);
+  let html = `<p class="muted" style="text-align:center;">You made the right call ${playerPct}% of the time; the opponent made the right call ${oppPct}% of the time.</p>`;
+  const winnerPct = winner === 'player' ? playerPct : oppPct;
+  const loserPct = winner === 'player' ? oppPct : playerPct;
+  if (winnerPct < loserPct){
+    const winnerLabel = winner === 'player' ? 'You' : 'The opponent';
+    html += `<p class="muted" style="text-align:center;">${winnerLabel} won despite the worse decisions. That happens: better strategy raises your odds, it doesn't guarantee the result.</p>`;
+  }
+  return html;
 }
 
 /* ============================== TURN-END REVIEW (grading vs exact DP) ============================== */
@@ -1011,6 +1036,10 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
     html += `</div>`;
     return html;
   }).join('');
+
+  const side = subj === PLAYER_SUBJECT ? 'player' : 'opponent';
+  state.tally[side].correct += correctCount;
+  state.tally[side].graded += gradedCount;
 
   const cls = gradedCount === 0 ? '' : (correctCount === gradedCount ? 'good' : (correctCount === 0 ? 'bad' : ''));
   let header = `<b>${correctCount}/${gradedCount} decisions matched optimal play this turn</b>` +

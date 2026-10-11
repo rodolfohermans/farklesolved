@@ -821,6 +821,11 @@ function startMatch(){
     bankedGroups: {player: [], opponent: []}, // this turn's banked dice, grouped by scoring choice
     gameOver: false,
     hasRolled: false, // no dice rolled yet this match -- changing settings needs no confirmation
+    // Recuento acumulado de decisiones de toda la partida, alimentado por
+    // renderReview() cada turno para ambos bandos (los mismos veredictos por
+    // decisión que ya se usan para el texto de revisión de cada turno, solo
+    // que acumulados en vez de descartados).
+    tally: {player: {correct: 0, graded: 0}, opponent: {correct: 0, graded: 0}},
   };
   document.getElementById('reviewArea').innerHTML = '';
   document.getElementById('bannerArea').innerHTML = '';
@@ -1292,6 +1297,28 @@ function endGame(winner){
   } else {
     el.innerHTML = `<div class="banner lose">Gana el oponente. ${state.scores.opponent} – ${state.scores.player}</div>`;
   }
+  el.innerHTML += renderAccuracySummary(winner);
+}
+
+// Precisión de decisiones de toda la partida para ambos bandos, alimentada
+// por los mismos veredictos por decisión que renderReview() ya calcula y
+// muestra cada turno (solo que acumulados en toda la partida en vez de
+// descartados). Se omite por completo si algún bando tiene cero decisiones
+// calificables (p. ej. una partida muy corta), en vez de mostrar un
+// porcentaje engañoso del 0%.
+function renderAccuracySummary(winner){
+  const p = state.tally.player, o = state.tally.opponent;
+  if (p.graded === 0 || o.graded === 0) return '';
+  const playerPct = Math.round(100 * p.correct / p.graded);
+  const oppPct = Math.round(100 * o.correct / o.graded);
+  let html = `<p class="muted" style="text-align:center;">Elegiste la jugada correcta el ${playerPct}% de las veces; el oponente eligió la jugada correcta el ${oppPct}% de las veces.</p>`;
+  const winnerPct = winner === 'player' ? playerPct : oppPct;
+  const loserPct = winner === 'player' ? oppPct : playerPct;
+  if (winnerPct < loserPct){
+    const winnerLabel = winner === 'player' ? 'Ganaste' : 'El oponente ganó';
+    html += `<p class="muted" style="text-align:center;">${winnerLabel} a pesar de tomar peores decisiones. Eso ocurre: una estrategia mejor aumenta tus probabilidades, no garantiza el resultado.</p>`;
+  }
+  return html;
 }
 
 /* ============================== TURN-END REVIEW (grading vs exact DP) ============================== */
@@ -1401,6 +1428,10 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
     html += `</div>`;
     return html;
   }).join('');
+
+  const side = subj === PLAYER_SUBJECT ? 'player' : 'opponent';
+  state.tally[side].correct += correctCount;
+  state.tally[side].graded += gradedCount;
 
   const cls = gradedCount === 0 ? '' : (correctCount === gradedCount ? 'good' : (correctCount === 0 ? 'bad' : ''));
   let header = `<b>${correctCount}/${gradedCount} decisiones coincidieron con el juego óptimo este turno</b>` +
