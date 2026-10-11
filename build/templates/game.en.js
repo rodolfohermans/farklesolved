@@ -422,7 +422,13 @@ function playOpponentTurn(strategy){
 let state = null;
 
 function startMatch(){
-  const {target, oppStrategy} = readSettingsFromControls();
+  const settings = readSettingsFromControls();
+  const target = settings.target;
+  // Empty selection ("Random") resolves to one concrete opponent, fixed for
+  // the whole match -- unlike the Jester, who changes strategy every turn.
+  const oppStrategy = settings.oppStrategy
+    || REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)];
+  document.getElementById('oppSelect').value = oppStrategy;
   state = {
     target, oppStrategy,
     scores: {player:0, opponent:0},
@@ -484,8 +490,15 @@ function renderIdle(){
   document.getElementById('oppRound').textContent = 0;
   document.getElementById('playerSelected').textContent = 0;
   document.getElementById('oppSelected').textContent = 0;
-  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
-  document.getElementById('characterLayer').classList.remove('visible'); // deferred to startMatch(): avoid loading a portrait before a match actually begins
+  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy] || 'Random';
+  // Only fetch/show a portrait once the player has actually picked someone --
+  // an empty ("Random") selection stays blank until Start resolves it, so a
+  // passive page view never triggers an eager portrait fetch.
+  if (oppStrategy){
+    updateCharacterLayer(oppStrategy);
+  } else {
+    document.getElementById('characterLayer').classList.remove('visible');
+  }
   document.getElementById('targetLine').textContent = `Race to ${target} points`;
   document.getElementById('diceRow').innerHTML = '';
   setCupsRollable(false);

@@ -430,7 +430,14 @@ function playOpponentTurn(strategy){
 let state = null;
 
 function startMatch(){
-  const {target, oppStrategy} = readSettingsFromControls();
+  const settings = readSettingsFromControls();
+  const target = settings.target;
+  // Una selección vacía ("Aleatorio") se resuelve en un oponente concreto,
+  // fijo para toda la partida -- a diferencia del Bufón, que cambia de
+  // estrategia cada turno.
+  const oppStrategy = settings.oppStrategy
+    || REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)];
+  document.getElementById('oppSelect').value = oppStrategy;
   state = {
     target, oppStrategy,
     scores: {player:0, opponent:0},
@@ -492,8 +499,16 @@ function renderIdle(){
   document.getElementById('oppRound').textContent = 0;
   document.getElementById('playerSelected').textContent = 0;
   document.getElementById('oppSelected').textContent = 0;
-  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
-  document.getElementById('characterLayer').classList.remove('visible'); // deferred to startMatch(): avoid loading a portrait before a match actually begins
+  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy] || 'Aleatorio';
+  // Solo se busca/muestra un retrato cuando el jugador realmente elige a
+  // alguien -- una selección vacía ("Aleatorio") queda en blanco hasta que
+  // Empezar la resuelve, así una visita pasiva nunca dispara una descarga
+  // anticipada de retrato.
+  if (oppStrategy){
+    updateCharacterLayer(oppStrategy);
+  } else {
+    document.getElementById('characterLayer').classList.remove('visible');
+  }
   document.getElementById('targetLine').textContent = `Carrera a ${target} puntos`;
   document.getElementById('diceRow').innerHTML = '';
   setCupsRollable(false);

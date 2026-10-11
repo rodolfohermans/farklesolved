@@ -190,7 +190,8 @@
       <div style="flex:2 1 260px; min-width:220px;">
         <label style="margin-top:0;">Oponente</label>
         <select id="oppSelect">
-          <option value="random" selected>El Bufón: el estilo de un parroquiano distinto cada turno</option>
+          <option value="" selected>Aleatorio: se elige un oponente concreto al empezar la partida</option>
+          <option value="random">El Bufón: el estilo de un parroquiano distinto cada turno</option>
           <option value="optimal">La Erudita: juega la estrategia óptima para un solo turno, y siempre se queda con la jugada que gana la partida</option>
           <option value="thresholds">El Intendente: guarda lo máximo que puede, solo arriesga cuando las probabilidades lo favorecen</option>
           <option value="stop3">El Vigía: se detiene en cuanto quedan menos de 3 dados</option>
@@ -802,7 +803,14 @@ function playOpponentTurn(strategy){
 let state = null;
 
 function startMatch(){
-  const {target, oppStrategy} = readSettingsFromControls();
+  const settings = readSettingsFromControls();
+  const target = settings.target;
+  // Una selección vacía ("Aleatorio") se resuelve en un oponente concreto,
+  // fijo para toda la partida -- a diferencia del Bufón, que cambia de
+  // estrategia cada turno.
+  const oppStrategy = settings.oppStrategy
+    || REAL_STRATEGIES[Math.floor(Math.random() * REAL_STRATEGIES.length)];
+  document.getElementById('oppSelect').value = oppStrategy;
   state = {
     target, oppStrategy,
     scores: {player:0, opponent:0},
@@ -864,8 +872,16 @@ function renderIdle(){
   document.getElementById('oppRound').textContent = 0;
   document.getElementById('playerSelected').textContent = 0;
   document.getElementById('oppSelected').textContent = 0;
-  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy];
-  document.getElementById('characterLayer').classList.remove('visible'); // deferred to startMatch(): avoid loading a portrait before a match actually begins
+  document.getElementById('oppWho').textContent = CHARACTER_NAME[oppStrategy] || 'Aleatorio';
+  // Solo se busca/muestra un retrato cuando el jugador realmente elige a
+  // alguien -- una selección vacía ("Aleatorio") queda en blanco hasta que
+  // Empezar la resuelve, así una visita pasiva nunca dispara una descarga
+  // anticipada de retrato.
+  if (oppStrategy){
+    updateCharacterLayer(oppStrategy);
+  } else {
+    document.getElementById('characterLayer').classList.remove('visible');
+  }
   document.getElementById('targetLine').textContent = `Carrera a ${target} puntos`;
   document.getElementById('diceRow').innerHTML = '';
   setCupsRollable(false);
