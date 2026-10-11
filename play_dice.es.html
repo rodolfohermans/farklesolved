@@ -197,6 +197,8 @@
           <option value="stop2">El Borracho: sigue tirando hasta quedarse con 1 dado, casi nunca sabe cuándo parar</option>
           <option value="firstscore">El Sacerdote: guarda en cuanto puntúa y da la noche por terminada</option>
           <option value="raceaware">El Estratega: vigila ambas puntuaciones, arriesga más si va perdiendo y guarda antes si va ganando, exacto solo con el objetivo de 4.000 puntos (con otros objetivos juega como El Erudito)</option>
+          <option value="gambler">El Apostador: cree que una buena racha significa que la suerte sigue de su lado — una superstición conocida, no probabilidades reales — y arriesga justo cuando debería guardar</option>
+          <option value="elder">El Anciano: décadas de juego experto, aunque la vista ya no es la que era — a veces confunde un dado, y se corrige cuando importa</option>
         </select>
       </div>
 
@@ -532,6 +534,48 @@ function enumerateActions(dice){
   return {isBust: actions.length === 0, actions};
 }
 
+// Misma lógica por cara que enumerateActions pero SIN los dos bloques de
+// detección de escalera, así las acciones "solo de escalera" se hallan por
+// diferencia de conjuntos -- una acción alcanzable con o sin ver el patrón
+// de escalera se trata correctamente como no exclusiva de la escalera (no
+// notar el patrón no borra una acción que nunca lo necesitó).
+function enumerateActionsNoStraight(dice){
+  const counts = {1:0,2:0,3:0,4:0,5:0,6:0};
+  for (const d of dice) counts[d]++;
+  const perFace = [1,2,3,4,5,6].map(f => faceOptions(f, counts[f]));
+  const keys = new Set();
+  for (const {bc,val} of combosSums(perFace)){
+    if (val > 0) keys.add(bc+','+val);
+  }
+  return keys;
+}
+function straightOnlyActionKeys(dice){
+  const {actions} = enumerateActions(dice);
+  const nonStraight = enumerateActionsNoStraight(dice);
+  return new Set(actions.filter(a => !nonStraight.has(a.bc+','+a.val)).map(a => a.bc+','+a.val));
+}
+
+/* ===================== MODELO DE PERCEPCIÓN (El Anciano) =====================
+Confusiones adyacentes en número de puntos, basadas en el diseño compartido
+de las caras del dado: el 3 es la pareja diagonal del 2 más un punto central
+añadido; el 5 son las cuatro esquinas del 4 más un punto central añadido --
+con poca agudeza visual, ese punto central compartido es justo el detalle de
+bajo contraste que desaparece primero. El 1 prácticamente nunca se confunde
+(subitización: las cantidades pequeñas se perciben al instante y con
+precisión, a diferencia de 4 o más, que requiere contar de verdad). Ver
+ROADMAP.md Fase 13 para las referencias. */
+function perceiveDie(face, pLose, pGain){
+  const r = Math.random();
+  if (face === 3 && r < pLose) return 2;
+  if (face === 5) return r < pLose ? 4 : face;
+  if (face === 2 && r < pGain) return 3;
+  if (face === 4 && r < pGain) return 5;
+  return face;
+}
+function perceiveDice(dice, pLose, pGain){
+  return dice.map(d => perceiveDie(d, pLose, pGain));
+}
+
 /* ---- Manual dice-selection validation: is THIS exact chosen subset of the
    roll a legal score, and what's it worth + what does it look like? Mirrors
    the same per-face rules as enumerateActions, applied to the dice the
@@ -608,7 +652,7 @@ function bestAction(k, T, actions){
 /* ============================== OPPONENT POLICIES ============================== */
 // Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
-  let k = 6, T = 0;
+  let k = 6, T = 0, streak = 0; // streak: aciertos consecutivos guardados este turno (solo El Apostador)
   const decisions = [];
   const oppPreTurnScore = state.scores.opponent;
   while (true){
@@ -618,7 +662,7 @@ function playOpponentTurn(strategy){
     if (isBust){
       return {points: 0, decisions, bustDice: dice};
     }
-    let chosen, cont;
+    let chosen, cont, revealMsg = null;
     if (strategy === 'optimal'){
       // Win-aware action choice: if any available action reaches the match
       // target outright this roll, take it (any one that reaches it is
@@ -678,6 +722,61 @@ function playOpponentTurn(strategy){
           cont = shouldContinue(k, T);
         }
       }
+    } else if (strategy === 'gambler'){
+      // Falacia de la mano caliente: arriesga más dentro de un turno tras
+      // varios aciertos seguidos, como si el éxito reciente predijera la
+      // siguiente tirada -- los dados no tienen memoria, así que esto es
+      // pura superstición, no una estrategia. Validado por simulación
+      // (gambler_fallacies.py): produce una tasa de reventón (~67%) muy por
+      // encima de cualquier otro personaje, una firma genuinamente
+      // distinta, a diferencia de las variantes de falacia del jugador y de
+      // perseguir pérdidas también probadas allí, que nunca superaron ese
+      // umbral con ninguna magnitud.
+      chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
+      const kp = chosen.bc === k ? 6 : k - chosen.bc;
+      T += chosen.val; k = kp;
+      streak += 1;
+      cont = T <= DP.thresholds[k] * (1 + streak);
+    } else if (strategy === 'elder'){
+      // Juego casi óptimo, lastrado por un modelo de confusión perceptiva
+      // basado en investigación real (ROADMAP.md Fase 13: las caras del
+      // dado comparten una relación de "añadir/quitar un punto central"
+      // entre 2/3 y 4/5; subitización, así que el 1 casi nunca se confunde),
+      // más una probabilidad independiente de no notar una escalera visible.
+      // El personaje decide según lo que PERCIBE; si esa elección resulta
+      // ilegal con los dados reales, se detecta y se corrige (ver el manejo
+      // de revealMsg en runOpponentTurn) en vez de actuar en silencio sobre
+      // una ficción.
+      const pLose = 0.08, pGain = pLose / 3, pMissStraight = 0.3; // validado en elder_perception.py
+      const perceivedDice = perceiveDice(dice, pLose, pGain);
+      const perceived = enumerateActions(perceivedDice);
+      if (perceived.isBust){
+        // Cree que no hay nada que guardar; con estas reglas eso es
+        // exactamente lo que significa un reventón (cada tirada exige
+        // guardar algo para continuar), así que el turno termina aquí,
+        // igual que un reventón real -- no hay ningún "intento" que una
+        // revelación pueda detectar.
+        return {points: 0, decisions, bustDice: dice};
+      }
+      let perceivedActions = perceived.actions;
+      if (Math.random() < pMissStraight){
+        const straightKeys = straightOnlyActionKeys(perceivedDice);
+        const withoutStraights = perceivedActions.filter(a => !straightKeys.has(a.bc+','+a.val));
+        if (withoutStraights.length) perceivedActions = withoutStraights;
+      }
+      const winningPerceived = perceivedActions.find(a => oppPreTurnScore + T + a.val >= state.target);
+      const intended = winningPerceived || bestAction(k, T, perceivedActions);
+      const realMatch = actions.find(a => a.bc === intended.bc && a.val === intended.val);
+      if (realMatch){
+        chosen = realMatch;
+      } else {
+        const winningReal = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
+        chosen = winningReal || bestAction(k, T, actions);
+        revealMsg = `Va a coger ${intended.label} — mirando mejor, no es así, y guarda ${chosen.label}.`;
+      }
+      const kp = chosen.bc === k ? 6 : k - chosen.bc;
+      T += chosen.val; k = kp;
+      cont = (oppPreTurnScore + T >= state.target) ? false : shouldContinue(k, T);
     } else { // firstscore
       chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
@@ -692,7 +791,7 @@ function playOpponentTurn(strategy){
     if (cont && oppPreTurnScore + T >= state.target){
       cont = false;
     }
-    decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T});
+    decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T, revealMsg});
     if (!cont){
       return {points: T, decisions};
     }
@@ -1048,16 +1147,16 @@ function finishPlayerTurn(points){
   render();
 }
 
-const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware'];
+const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware', 'gambler', 'elder'];
 const CHARACTER_NAME = {
   random: 'El Bufón', optimal: 'El Erudito', thresholds: 'El Intendente',
   stop3: 'El Vigía', stop2: 'El Borracho', firstscore: 'El Sacerdote',
-  raceaware: 'El Estratega',
+  raceaware: 'El Estratega', gambler: 'El Apostador', elder: 'El Anciano',
 };
 const CHARACTER_PORTRAIT = {
   random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
   stop3: 'watchman', stop2: 'drunk', firstscore: 'priest',
-  raceaware: 'tactician',
+  raceaware: 'tactician', gambler: 'gambler', elder: 'elder',
 };
 function updateCharacterLayer(oppStrategy){
   const el = document.getElementById('characterLayer');
@@ -1108,6 +1207,10 @@ async function runOpponentTurn(){
     renderDice(d.dice, false);
     logLine(`El oponente tiró [${sortedDice(d.dice)}]`);
     await pace();
+    if (d.revealMsg){
+      logLine(d.revealMsg);
+      await pace();
+    }
     logLine(`El oponente guarda ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dados restantes, total del turno ${d.resultingT}`);
     state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
     renderBankedGroups();

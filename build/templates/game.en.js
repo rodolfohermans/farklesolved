@@ -161,6 +161,46 @@ function enumerateActions(dice){
   return {isBust: actions.length === 0, actions};
 }
 
+// Same per-face logic as enumerateActions but WITHOUT the two straight-
+// detection blocks, so "straight-only" actions can be found by set
+// difference -- an action reachable BOTH with and without seeing the
+// straight pattern is correctly treated as not straight-only (missing the
+// pattern doesn't erase an action that never needed it).
+function enumerateActionsNoStraight(dice){
+  const counts = {1:0,2:0,3:0,4:0,5:0,6:0};
+  for (const d of dice) counts[d]++;
+  const perFace = [1,2,3,4,5,6].map(f => faceOptions(f, counts[f]));
+  const keys = new Set();
+  for (const {bc,val} of combosSums(perFace)){
+    if (val > 0) keys.add(bc+','+val);
+  }
+  return keys;
+}
+function straightOnlyActionKeys(dice){
+  const {actions} = enumerateActions(dice);
+  const nonStraight = enumerateActionsNoStraight(dice);
+  return new Set(actions.filter(a => !nonStraight.has(a.bc+','+a.val)).map(a => a.bc+','+a.val));
+}
+
+/* ===================== PERCEPTION MODEL (The Elder) =====================
+Pip-count-adjacent confusions grounded in shared dice layout: 3 is 2's
+diagonal pair plus one added center pip, 5 is 4's four corners plus one
+added center pip -- under low acuity, that shared center pip is exactly
+the low-contrast detail that fades first. 1 is essentially never misread
+(subitizing: small counts are perceived instantly and accurately, unlike
+4+ which needs real counting). See ROADMAP.md Phase 13 for the citations. */
+function perceiveDie(face, pLose, pGain){
+  const r = Math.random();
+  if (face === 3 && r < pLose) return 2;
+  if (face === 5) return r < pLose ? 4 : face;
+  if (face === 2 && r < pGain) return 3;
+  if (face === 4 && r < pGain) return 5;
+  return face;
+}
+function perceiveDice(dice, pLose, pGain){
+  return dice.map(d => perceiveDie(d, pLose, pGain));
+}
+
 /* ---- Manual dice-selection validation: is THIS exact chosen subset of the
    roll a legal score, and what's it worth + what does it look like? Mirrors
    the same per-face rules as enumerateActions, applied to the dice the
@@ -237,7 +277,7 @@ function bestAction(k, T, actions){
 /* ============================== OPPONENT POLICIES ============================== */
 // Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
-  let k = 6, T = 0;
+  let k = 6, T = 0, streak = 0; // streak: consecutive successful banks this turn (Gambler only)
   const decisions = [];
   const oppPreTurnScore = state.scores.opponent;
   while (true){
@@ -247,7 +287,7 @@ function playOpponentTurn(strategy){
     if (isBust){
       return {points: 0, decisions, bustDice: dice};
     }
-    let chosen, cont;
+    let chosen, cont, revealMsg = null;
     if (strategy === 'optimal'){
       // Win-aware action choice: if any available action reaches the match
       // target outright this roll, take it (any one that reaches it is
@@ -306,6 +346,57 @@ function playOpponentTurn(strategy){
           cont = shouldContinue(k, T);
         }
       }
+    } else if (strategy === 'gambler'){
+      // Hot-hand fallacy: push further within a turn after consecutive
+      // successful banks, as if recent success predicts the next roll --
+      // dice are memoryless, so this is pure superstition, not a strategy.
+      // Validated by simulation (gambler_fallacies.py) to produce a bust
+      // rate (~67%) well beyond any other persona, a genuinely distinct
+      // signature, unlike the gambler's-fallacy and loss-chasing variants
+      // also tested there, which never cleared that bar at any magnitude.
+      chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
+      const kp = chosen.bc === k ? 6 : k - chosen.bc;
+      T += chosen.val; k = kp;
+      streak += 1;
+      cont = T <= DP.thresholds[k] * (1 + streak);
+    } else if (strategy === 'elder'){
+      // Near-optimal play, handicapped by a perceptual confusion model
+      // grounded in real research (ROADMAP.md Phase 13: dice pip layouts
+      // sharing an "add/remove one center pip" relationship for 2/3 and
+      // 4/5; subitizing, so 1 is essentially never misread), plus an
+      // independent chance of missing a visible straight. The character
+      // decides from what they PERCEIVE; if that choice turns out illegal
+      // on the real dice, it's caught and corrected (see runOpponentTurn's
+      // revealMsg handling) rather than silently acted on as a fiction.
+      const pLose = 0.08, pGain = pLose / 3, pMissStraight = 0.3; // validated in elder_perception.py
+      const perceivedDice = perceiveDice(dice, pLose, pGain);
+      const perceived = enumerateActions(perceivedDice);
+      if (perceived.isBust){
+        // Believes there's nothing to bank; under these rules that's
+        // exactly what a bust means (every roll requires banking
+        // something to continue), so the turn ends here, same as a real
+        // bust -- there's no "attempt" here for a reveal to catch.
+        return {points: 0, decisions, bustDice: dice};
+      }
+      let perceivedActions = perceived.actions;
+      if (Math.random() < pMissStraight){
+        const straightKeys = straightOnlyActionKeys(perceivedDice);
+        const withoutStraights = perceivedActions.filter(a => !straightKeys.has(a.bc+','+a.val));
+        if (withoutStraights.length) perceivedActions = withoutStraights;
+      }
+      const winningPerceived = perceivedActions.find(a => oppPreTurnScore + T + a.val >= state.target);
+      const intended = winningPerceived || bestAction(k, T, perceivedActions);
+      const realMatch = actions.find(a => a.bc === intended.bc && a.val === intended.val);
+      if (realMatch){
+        chosen = realMatch;
+      } else {
+        const winningReal = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
+        chosen = winningReal || bestAction(k, T, actions);
+        revealMsg = `He reaches for ${intended.label} — a closer look says otherwise, and he banks ${chosen.label} instead.`;
+      }
+      const kp = chosen.bc === k ? 6 : k - chosen.bc;
+      T += chosen.val; k = kp;
+      cont = (oppPreTurnScore + T >= state.target) ? false : shouldContinue(k, T);
     } else { // firstscore
       chosen = actions.reduce((a,b)=> b.val > a.val ? b : a);
       const kp = chosen.bc === k ? 6 : k - chosen.bc;
@@ -320,7 +411,7 @@ function playOpponentTurn(strategy){
     if (cont && oppPreTurnScore + T >= state.target){
       cont = false;
     }
-    decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T});
+    decisions.push({kBefore, TBefore, dice, actionsAvailable: actions, actionChosen: chosen, continued: cont, resultingK: k, resultingT: T, revealMsg});
     if (!cont){
       return {points: T, decisions};
     }
@@ -669,16 +760,16 @@ function finishPlayerTurn(points){
   render();
 }
 
-const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware'];
+const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware', 'gambler', 'elder'];
 const CHARACTER_NAME = {
   random: 'The Jester', optimal: 'The Scholar', thresholds: 'The Quartermaster',
   stop3: 'The Watchman', stop2: 'The Drunkard', firstscore: 'The Priest',
-  raceaware: 'The Tactician',
+  raceaware: 'The Tactician', gambler: 'The Gambler', elder: 'The Elder',
 };
 const CHARACTER_PORTRAIT = {
   random: 'jester', optimal: 'scholar', thresholds: 'quartermaster',
   stop3: 'watchman', stop2: 'drunk', firstscore: 'priest',
-  raceaware: 'tactician',
+  raceaware: 'tactician', gambler: 'gambler', elder: 'elder',
 };
 function updateCharacterLayer(oppStrategy){
   const el = document.getElementById('characterLayer');
@@ -729,6 +820,10 @@ async function runOpponentTurn(){
     renderDice(d.dice, false);
     logLine(`Opponent rolled [${sortedDice(d.dice)}]`);
     await pace();
+    if (d.revealMsg){
+      logLine(d.revealMsg);
+      await pace();
+    }
     logLine(`Opponent banks ${d.actionChosen.label} (+${d.actionChosen.val}) → ${d.resultingK} dice left, turn total ${d.resultingT}`);
     state.bankedGroups.opponent.push(...decomposeAction(d.actionChosen));
     renderBankedGroups();

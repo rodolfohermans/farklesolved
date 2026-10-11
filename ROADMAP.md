@@ -616,7 +616,7 @@ ship:
 - Still not implemented: the actual bias-vs-strategy-skill simulation itself (the questions posed
   above). This phase's groundwork is data-gathering only.
 
-## Phase 12 (future, not scheduled): myth-driven opponent persona
+## Phase 12: "The Gambler" -- myth-driven opponent persona (hot-hand only)
 
 Raised 2026-10-11 during the Phase 10 race-aware opponent work: the name "Gambler" evokes
 classic gambling cognitive biases (gambler's fallacy, hot-hand fallacy, loss-chasing), which are
@@ -703,7 +703,20 @@ sweep: 51.5% (exag=1.0) -> 41.8% (1.1) -> 36.9% (1.2) -> 32.7% (1.3) -> 30.3% (1
 a ~9.7-point drop from just a 10% overshoot, reproducing the original run's 51.0%->41.6% step
 almost exactly.
 
-## Phase 13 (future, not scheduled): "The Elder" -- near-optimal play with misread dice
+**Implemented (2026-10-12, branch `feature/gambler-race-aware`):** shipped as "The Gambler,"
+hot-hand ONLY -- the one mechanic that actually cleared the distinguishability bar above.
+Gambler's-fallacy and loss-chasing are deliberately left out of the shipped character, consistent
+with the negative/cliff findings; combining untested mechanics "for flavor" would have violated
+the same discipline this whole phase was built on. Magnitude 1.0 (the most sharply characterized
+setting tested: ~67% bust rate), baseline dice-choice matches the Quartermaster's (bank the
+single highest-value combo; the differentiator is entirely the continue/stop call). Flavor text
+names this explicitly as a known cognitive bias, not a real strategy: "believes a hot streak means
+more luck is coming -- a well-known superstition, not real odds -- and pushes his luck exactly
+when he should bank." No new embedded data (the escalating threshold is a pure formula on the
+existing DP.thresholds table), so this added effectively zero page weight on its own. Portrait is
+a placeholder pending the project owner's own art, same as the Tactician.
+
+## Phase 13: "The Elder" -- near-optimal play with misread dice
 
 Raised 2026-10-11: a character with a near-optimal decision policy but a perceptual handicap
 (poor eyesight), as opposed to every existing persona's flaws being purely behavioral/decision-
@@ -786,5 +799,19 @@ closely and stayed monotonic and smooth (confidence intervals tightened from ~0.
 endpoints within noise), reveal rate 0%->20.7% (vs 0%->21.3%); straight-miss-alone win rate
 44.4%->33.5% (vs the original 44.2%->33.0%). No instability or non-monotonicity appeared at the
 larger sample size that the smaller run's confidence intervals could have been masking.
+
+**Implemented (2026-10-12, branch `feature/gambler-race-aware`):** shipped as "The Elder," using
+exactly the validated combination (p_lose=0.08, p_gain=p_lose/3, p_miss_straight=0.3) already
+measured above rather than a new, untested point. One deliberate improvement over the research
+script: the shipped version prefers any PERCEIVED winning move the same way the Scholar/Tactician
+prefer a real one (checked for legality like any other intended action, with the same reveal-and-
+correct fallback if it isn't actually legal) -- the research code didn't have this, which was an
+oversight there, not a considered design choice; omitting it in the research script doesn't change
+any of its findings above, since that gap affects only the rare case of being one roll from
+winning. Flavor text and in-game "reveal" messages were written to be factual and respectful: the
+character is introduced by its decades of *expert* play, with the vision limitation stated as an
+ordinary fact alongside that, not a punchline; the reveal line itself ("He reaches for X -- a
+closer look says otherwise, and he banks Y instead.") is neutral and matter-of-fact, describing a
+correction, not mocking a mistake. Portrait is a placeholder pending the project owner's own art.
 
 ---

@@ -10,7 +10,7 @@ This is an unofficial fan project. It is not affiliated with, endorsed by, or as
 
 No analytics, no tracking pixels, no third-party scripts, no cookies, nothing that identifies you. This is checked, not just claimed: the About page documents a real audit, including captured browser network traffic, not just a source-code read-through.
 
-Each page is a single self-contained file, about 508KB, inside the [512KB Club](https://512kb.club/)'s Blue tier but with little room left. Everything, including the dice art, the background, and the custom font, is embedded in that one file; nothing else loads over the network except an opponent portrait fetched from this same site once you pick or change one.
+Each page is a single self-contained file, about 513KB, inside the [512KB Club](https://512kb.club/)'s Blue tier but with little room left. Everything, including the dice art, the background, and the custom font, is embedded in that one file; nothing else loads over the network except an opponent portrait fetched from this same site once you pick or change one.
 
 ## What's here
 
