@@ -561,10 +561,18 @@ name mismatch: this persona is a cold, exact, score-tracking optimizer, the oppo
 superstition/myth associations "Gambler" carries (gambler's fallacy, hot-hand fallacy). "Gambler"
 was left open for a future myth-driven persona instead -- see Phase 12.
 
-Portrait is a placeholder (`assets/characters/tactician.png`, plain text label, not real art) by
-explicit agreement with the project owner, who will supply real art later on this feature branch.
+Portrait was a placeholder (plain text label, not real art) pending the project owner's own art,
+by explicit agreement, while built on branch `feature/gambler-race-aware` rather than master.
 
-Built on branch `feature/gambler-race-aware`, not master, by explicit instruction, pending that art.
+**Art delivered (2026-10-12)**: real portrait (AI-generated via Gemini, processed into the site's
+asset format) replaced the placeholder. Processing pipeline, reused identically for all three new
+personas' art: background removed via a 4px feathered alpha transition (distance-transform-based,
+not a hard chroma-key cutout, matching how the existing cast's own edges look), then the detected
+character-content bounding box was rescaled to the AVERAGE content bbox measured across the six
+existing real portraits (so the new characters sit at a consistent scale/position relative to the
+rest of the cast when rendered through `.character-layer`'s `background-size:100% 100%` stretch),
+then recompressed losslessly with the same zopfli pipeline as Phase 14 (pixel-identical, verified).
+Confirmed in situ via a real browser screenshot of the actual game page, not just the isolated PNG.
 
 ## Phase 11 (future, not scheduled): Loaded-dice bias measurement
 
@@ -713,8 +721,9 @@ single highest-value combo; the differentiator is entirely the continue/stop cal
 names this explicitly as a known cognitive bias, not a real strategy: "believes a hot streak means
 more luck is coming -- a well-known superstition, not real odds -- and pushes his luck exactly
 when he should bank." No new embedded data (the escalating threshold is a pure formula on the
-existing DP.thresholds table), so this added effectively zero page weight on its own. Portrait is
-a placeholder pending the project owner's own art, same as the Tactician.
+existing DP.thresholds table), so this added effectively zero page weight on its own. Portrait was
+a placeholder, replaced 2026-10-12 with real art -- see Phase 10's note for the processing pipeline
+(same one used for all three new personas' art).
 
 ## Phase 13: "The Elder" -- near-optimal play with misread dice
 
@@ -812,7 +821,10 @@ winning. Flavor text and in-game "reveal" messages were written to be factual an
 character is introduced by its decades of *expert* play, with the vision limitation stated as an
 ordinary fact alongside that, not a punchline; the reveal line itself ("He reaches for X -- a
 closer look says otherwise, and he banks Y instead.") is neutral and matter-of-fact, describing a
-correction, not mocking a mistake. Portrait is a placeholder pending the project owner's own art.
+correction, not mocking a mistake. Portrait was a placeholder, replaced 2026-10-12 with real art
+depicting a woman rather than a third old man (the cast was all-male; this also sidesteps reading
+as a redundant third variation on the Scholar/Priest's already-elderly look) -- see Phase 10's note
+for the processing pipeline.
 
 ## Phase 14: Lossless asset recompression (page weight)
 
