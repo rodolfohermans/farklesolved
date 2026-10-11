@@ -574,6 +574,14 @@ rest of the cast when rendered through `.character-layer`'s `background-size:100
 then recompressed losslessly with the same zopfli pipeline as Phase 14 (pixel-identical, verified).
 Confirmed in situ via a real browser screenshot of the actual game page, not just the isolated PNG.
 
+**Scholar portrait replaced with a woman (2026-10-12)**, same art pipeline, at the project owner's
+request -- the existing cast was otherwise all-male. Caught and fixed a consequence specific to
+Spanish: "El Erudito" is grammatically masculine, which would have mismatched the new portrait.
+Changed to "La Erudita" everywhere it appears (`game.es.js`'s `CHARACTER_NAME` map and two internal
+comments, `template.es.html`'s dropdown option, the opponent-roster intro paragraph's "la aguda
+Erudita," and the Tactician's fallback-persona mention), verified via a Spanish-page browser
+screenshot. English needed no change ("Scholar" isn't grammatically gendered).
+
 ## Phase 11 (future, not scheduled): Loaded-dice bias measurement
 
 Raised 2026-10-11 while researching opponent strategies and other sites' dice-game content:

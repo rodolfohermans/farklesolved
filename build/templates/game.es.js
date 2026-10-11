@@ -15,8 +15,8 @@ function shouldContinue(k, T){
 // en race_dp.py (ver race_aware_opponent.py), resuelto solo para G=4000: la
 // superficie de valor completa para cualquier objetivo pesaría megabytes por
 // objetivo, lo que el compromiso de peso de página de este sitio descarta.
-// Con cualquier otro objetivo de partida, El Estratega recurre a la tabla del
-// Erudito, ciega a la carrera (ver playOpponentTurn más abajo), en vez de
+// Con cualquier otro objetivo de partida, El Estratega recurre a la tabla de
+// La Erudita, ciega a la carrera (ver playOpponentTurn más abajo), en vez de
 // aproximar en silencio.
 const RACE = (function(){
   const el = document.getElementById('race-data');
@@ -322,7 +322,7 @@ function playOpponentTurn(strategy){
       const minDice = strategy === 'stop3' ? 3 : 2;
       cont = k >= minDice;
     } else if (strategy === 'raceaware'){
-      // Misma preferencia consciente de la victoria que El Erudito, ver arriba.
+      // Misma preferencia consciente de la victoria que La Erudita, ver arriba.
       const winningAction = actions.find(a => oppPreTurnScore + T + a.val >= state.target);
       if (winningAction){
         const kp = winningAction.bc === k ? 6 : k - winningAction.bc;
@@ -770,7 +770,7 @@ function finishPlayerTurn(points){
 
 const REAL_STRATEGIES = ['optimal', 'thresholds', 'stop3', 'stop2', 'firstscore', 'raceaware', 'gambler', 'elder'];
 const CHARACTER_NAME = {
-  random: 'El Bufón', optimal: 'El Erudito', thresholds: 'El Intendente',
+  random: 'El Bufón', optimal: 'La Erudita', thresholds: 'El Intendente',
   stop3: 'El Vigía', stop2: 'El Borracho', firstscore: 'El Sacerdote',
   raceaware: 'El Estratega', gambler: 'El Apostador', elder: 'El Anciano',
 };
