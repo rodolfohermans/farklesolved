@@ -277,6 +277,56 @@ function bestAction(k, T, actions){
   return best;
 }
 
+/* ===================== VALOR EXACTO DE SEGUIR (solo para evaluar) =====================
+vLookup(k,T) devuelve V[k][T] = max(T, valorDeSeguir) -- ese máximo destruye el
+valor de seguir en cuanto guardar ya es mejor, así que la tabla incrustada por
+sí sola no puede decir CUÁNTO peor fue seguir en ese caso (necesario para
+evaluar un error de "siguió demasiado" con la misma indulgencia de margen
+insignificante que un error de "guardó demasiado pronto" ya recibe, donde
+V[k][T]-T da directamente el margen). Recalcular en vivo el valor de seguir
+sin el máximo es barato y exacto: hay como mucho C(k+5,5)=462 resultados de
+dados distintos para k<=6, en caché por k ya que la enumeración de resultados
+no depende de T. */
+function combosWithReplacement(k){
+  const results = [];
+  (function rec(start, combo){
+    if (combo.length === k){ results.push(combo.slice()); return; }
+    for (let f = start; f <= 6; f++){ combo.push(f); rec(f, combo); combo.pop(); }
+  })(1, []);
+  return results;
+}
+const FACTORIAL = [1,1,2,6,24,120,720];
+const weightedOutcomesCache = {};
+function weightedOutcomesForK(k){
+  if (weightedOutcomesCache[k]) return weightedOutcomesCache[k];
+  const outcomes = combosWithReplacement(k).map(combo => {
+    const counts = {};
+    for (const f of combo) counts[f] = (counts[f] || 0) + 1;
+    let weight = FACTORIAL[k];
+    for (const f in counts) weight /= FACTORIAL[counts[f]];
+    const {isBust, actions} = enumerateActions(combo);
+    return {weight, isBust, actions};
+  });
+  const n = Math.pow(6, k);
+  weightedOutcomesCache[k] = {outcomes, n};
+  return weightedOutcomesCache[k];
+}
+function continueEV(k, T){
+  const {outcomes, n} = weightedOutcomesForK(k);
+  let total = 0;
+  for (const {weight, isBust, actions} of outcomes){
+    if (isBust) continue;
+    let best = -Infinity;
+    for (const a of actions){
+      const kp = a.bc === k ? 6 : k - a.bc;
+      const v = vLookup(kp, T + a.val);
+      if (v > best) best = v;
+    }
+    total += weight * best;
+  }
+  return total / n;
+}
+
 /* ============================== OPPONENT POLICIES ============================== */
 // Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
@@ -960,12 +1010,15 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
     return;
   }
   const reachesTarget = (T) => preTurnScore + T >= target;
-  // Same "end-game zone" condition as the live hint banner: either side within
-  // ~1000 of the target. The report's own exact race-aware solve shows real
-  // optimal play diverges substantially from these race-blind thresholds here
-  // (e.g. pushing far harder than the table says while badly behind) -- so
-  // outside the hard win/lose cases above, verdicts in this zone get a caveat
-  // instead of a confident right/wrong, rather than silently overclaiming.
+  // Misma condición de "zona de final de partida" que el aviso en vivo: algún
+  // lado a menos de ~1000 del objetivo, donde el punto ciego de la tabla de un
+  // solo turno (no sabe nada del objetivo de la partida ni de la puntuación
+  // del rival) puede importar. Usada más abajo solo como último recurso,
+  // cuando hay un desacuerdo real con lo que el jugador eligió, no hay
+  // respuesta exacta consciente de la carrera disponible para este objetivo,
+  // y el margen tampoco es ya decisivo en un sentido u otro -- no como un
+  // aviso general de "toda decisión de este turno es sospechosa" sin
+  // importar si siquiera está en desacuerdo con lo elegido.
   const endgameZone = (target - preTurnScore) <= 1000 || (target - otherScore) <= 1000;
 
   // actionOK/contOK are tri-state: true = correct, false = wrong, null = too
@@ -1002,10 +1055,14 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
       } else if (negligible){
         actionOK = true;
         actionHtml = `<span class="tag meh">≈ casi óptimo</span> otra elección (<i>${describeAction(opt, d.kBefore)}</i>) valía técnicamente un poco más (${opt.v.toFixed(1)} frente a ${chosenV.toFixed(1)}, una diferencia de ${gap.toFixed(1)} puntos), demasiado pequeña para importar en la práctica.`;
-      } else if (endgameZone){
-        actionOK = null;
-        actionHtml = `<span class="tag meh">? incierto: zona de final de partida</span> la tabla ciega a la carrera prefiere <i>${describeAction(opt, d.kBefore)}</i> aquí, pero cualquiera de los dos lados está lo bastante cerca del objetivo como para que esta comparación sea poco fiable (consulta los resultados completos del informe sobre la carrera), no cuenta en el total.`;
       } else {
+        // Sin aviso de zona de final de partida aquí, a diferencia de la
+        // decisión de seguir/guardar más abajo: QUÉ dados guardar depende
+        // casi por completo de las posibilidades de este turno, no de la
+        // carrera, y la validación de la Fase 10 ya mostró que la elección
+        // ciega a la carrera aquí es estadísticamente indistinguible de la
+        // totalmente consciente de la carrera (49,87% frente a 50,13% cara a
+        // cara) -- no hay incertidumbre real que señalar.
         actionOK = false;
         actionHtml = `<span class="tag no">✗ elección no óptima</span> lo óptimo era <i>${describeAction(opt, d.kBefore)}</i> (valor esperado ${opt.v.toFixed(0)} frente a ${chosenV.toFixed(0)}, una diferencia de ${gap.toFixed(0)} puntos)`;
       }
@@ -1019,17 +1076,51 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
       } else {
         contHtml = `<span class="tag no">✗ decisión equivocada</span> ya ${subj.hadReached} alcanzado ${subj.poss} objetivo de ${target} al guardar: seguir tirando solo arriesgaba una victoria que ya ${subj.had} asegurada.`;
       }
-    } else if (endgameZone){
-      const contOptimal = shouldContinue(d.resultingK, d.resultingT);
-      contOK = null;
-      contHtml = `<span class="tag meh">? incierto: zona de final de partida</span> la tabla ciega a la carrera dice ${contOptimal ? "seguir tirando" : "guardar"} aquí (el umbral para ${d.resultingK} dados es ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}), pero esa tabla no sabe que la partida está cerca de terminar, no cuenta en el total.`;
     } else {
-      const contOptimal = shouldContinue(d.resultingK, d.resultingT);
-      contOK = d.continued === contOptimal;
-      if (contOK){
-        contHtml = `<span class="tag ok">✓ decisión correcta</span>`;
+      // Se prefiere el umbral exacto consciente de la carrera cuando
+      // realmente está resuelto para este objetivo (los mismos datos que usa
+      // El Estratega): una respuesta real en vez de una suposición, así que
+      // esto nunca necesita caer en "incierto" para el objetivo
+      // predeterminado del sitio.
+      const exact = RACE && target === RACE.G;
+      let contOptimal;
+      if (exact){
+        const i = Math.floor(preTurnScore / STEP), j = Math.floor(otherScore / STEP);
+        const th = raceThreshold(i, j, d.resultingK);
+        contOptimal = th >= 0 && d.resultingT <= th;
       } else {
-        contHtml = `<span class="tag no">✗ decisión equivocada</span> el juego exacto dice que ${subj.shouldHave} ${contOptimal ? "seguido tirando" : "guardado"} aquí (el umbral para ${d.resultingK} dados es ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}).`;
+        contOptimal = shouldContinue(d.resultingK, d.resultingT);
+      }
+      const matches = d.continued === contOptimal;
+      if (matches){
+        contOK = true;
+        contHtml = `<span class="tag ok">✓ decisión correcta</span>`;
+      } else if (exact){
+        contOK = false;
+        contHtml = `<span class="tag no">✗ decisión equivocada</span> el juego exacto consciente de la carrera (teniendo en cuenta ambas puntuaciones, no solo este turno) dice que ${subj.shouldHave} ${contOptimal ? "seguido tirando" : "guardado"} aquí.`;
+      } else {
+        // Sin tabla exacta consciente de la carrera para este objetivo --
+        // se recurre al umbral de un solo turno, pero con la misma
+        // indulgencia de margen insignificante que ya recibe la elección de
+        // dados, calculada con el valor real de seguir (no con la tabla
+        // incrustada, que colapsa a exactamente T en cuanto guardar es la
+        // mejor opción y no puede revelar cuánto peor habría sido seguir en
+        // esa dirección).
+        const contEV = continueEV(d.resultingK, d.resultingT);
+        const correctValue = contOptimal ? contEV : d.resultingT;
+        const gap = Math.abs(contEV - d.resultingT);
+        const negligible = gap < Math.max(25, 0.02 * correctValue);
+        const clearlyDecisive = gap > Math.max(250, 0.2 * correctValue);
+        if (negligible){
+          contOK = true;
+          contHtml = `<span class="tag meh">≈ casi óptimo</span> el juego exacto prefiere técnicamente ${contOptimal ? "seguir tirando" : "guardar"} aquí (${contEV.toFixed(1)} frente a ${d.resultingT}, una diferencia de ${gap.toFixed(1)} puntos), demasiado pequeña para importar en la práctica.`;
+        } else if (endgameZone && !clearlyDecisive){
+          contOK = null;
+          contHtml = `<span class="tag meh">? incierto: zona de final de partida</span> la tabla de un solo turno dice ${contOptimal ? "seguir tirando" : "guardar"} aquí, pero no sabe nada del objetivo de la partida ni de la puntuación del rival, y este no es un caso claro (consulta los resultados sobre la carrera en el informe de estrategia); no cuenta en el total.`;
+        } else {
+          contOK = false;
+          contHtml = `<span class="tag no">✗ decisión equivocada</span> el juego exacto dice que ${subj.shouldHave} ${contOptimal ? "seguido tirando" : "guardado"} aquí (el umbral para ${d.resultingK} dados es ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}).`;
+        }
       }
     }
 

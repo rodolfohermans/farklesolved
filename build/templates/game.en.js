@@ -274,6 +274,55 @@ function bestAction(k, T, actions){
   return best;
 }
 
+/* ===================== EXACT CONTINUE-EV (for grading only) =====================
+vLookup(k,T) returns V[k][T] = max(T, continueEV) -- that max destroys the
+continuing side's own value once banking has become better, so the embedded
+table alone can't say HOW much worse continuing was in that case (needed to
+grade a "pushed too far" mistake with the same negligible-gap leniency a
+"banked too early" mistake already gets, where V[k][T]-T directly gives the
+gap). Recomputing the un-maxed continue value live is cheap and exact: there
+are at most C(k+5,5)=462 distinct dice outcomes for k<=6, cached per k since
+the outcome enumeration itself doesn't depend on T. */
+function combosWithReplacement(k){
+  const results = [];
+  (function rec(start, combo){
+    if (combo.length === k){ results.push(combo.slice()); return; }
+    for (let f = start; f <= 6; f++){ combo.push(f); rec(f, combo); combo.pop(); }
+  })(1, []);
+  return results;
+}
+const FACTORIAL = [1,1,2,6,24,120,720];
+const weightedOutcomesCache = {};
+function weightedOutcomesForK(k){
+  if (weightedOutcomesCache[k]) return weightedOutcomesCache[k];
+  const outcomes = combosWithReplacement(k).map(combo => {
+    const counts = {};
+    for (const f of combo) counts[f] = (counts[f] || 0) + 1;
+    let weight = FACTORIAL[k];
+    for (const f in counts) weight /= FACTORIAL[counts[f]];
+    const {isBust, actions} = enumerateActions(combo);
+    return {weight, isBust, actions};
+  });
+  const n = Math.pow(6, k);
+  weightedOutcomesCache[k] = {outcomes, n};
+  return weightedOutcomesCache[k];
+}
+function continueEV(k, T){
+  const {outcomes, n} = weightedOutcomesForK(k);
+  let total = 0;
+  for (const {weight, isBust, actions} of outcomes){
+    if (isBust) continue;
+    let best = -Infinity;
+    for (const a of actions){
+      const kp = a.bc === k ? 6 : k - a.bc;
+      const v = vLookup(kp, T + a.val);
+      if (v > best) best = v;
+    }
+    total += weight * best;
+  }
+  return total / n;
+}
+
 /* ============================== OPPONENT POLICIES ============================== */
 // Each policy plays one full turn and returns points banked (0 if bust).
 function playOpponentTurn(strategy){
@@ -949,11 +998,13 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
   }
   const reachesTarget = (T) => preTurnScore + T >= target;
   // Same "end-game zone" condition as the live hint banner: either side within
-  // ~1000 of the target. The report's own exact race-aware solve shows real
-  // optimal play diverges substantially from these race-blind thresholds here
-  // (e.g. pushing far harder than the table says while badly behind) -- so
-  // outside the hard win/lose cases above, verdicts in this zone get a caveat
-  // instead of a confident right/wrong, rather than silently overclaiming.
+  // ~1000 of the target, where the single-turn table's blind spot (it knows
+  // nothing of the match target or the opponent's score) can matter. Used
+  // below only as a LAST resort, when there's an actual disagreement with the
+  // player's choice, no exact race-aware answer is available for this target,
+  // and the gap isn't already decisive either way -- not as a blanket "every
+  // decision this turn is suspect" flag regardless of whether it even
+  // disagrees with what was chosen.
   const endgameZone = (target - preTurnScore) <= 1000 || (target - otherScore) <= 1000;
 
   // actionOK/contOK are tri-state: true = correct, false = wrong, null = too
@@ -990,10 +1041,13 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
       } else if (negligible){
         actionOK = true;
         actionHtml = `<span class="tag meh">≈ near-optimal</span> a different pick (<i>${describeAction(opt, d.kBefore)}</i>) was technically worth marginally more (${opt.v.toFixed(1)} vs ${chosenV.toFixed(1)}, a ${gap.toFixed(1)}-point difference), too small to matter in practice.`;
-      } else if (endgameZone){
-        actionOK = null;
-        actionHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table prefers <i>${describeAction(opt, d.kBefore)}</i> here, but either side is close enough to the target that this comparison is known to be unreliable (see the report's full race-aware findings), not counted toward the tally.`;
       } else {
+        // No end-game-zone caveat here, unlike the continue/bank call below:
+        // which DICE to bank is almost entirely about this turn's own
+        // prospects, not the race, and Phase 10's validation already showed
+        // the race-blind choice here is statistically indistinguishable from
+        // the fully race-aware one (49.87% vs 50.13% head-to-head) -- there's
+        // no real uncertainty to flag.
         actionOK = false;
         actionHtml = `<span class="tag no">✗ suboptimal pick</span> optimal was <i>${describeAction(opt, d.kBefore)}</i> (expected value ${opt.v.toFixed(0)} vs ${chosenV.toFixed(0)}, a ${gap.toFixed(0)}-point gap)`;
       }
@@ -1007,17 +1061,49 @@ function renderReview(decisions, preTurnScore, otherScore, target, subj){
       } else {
         contHtml = `<span class="tag no">✗ wrong call</span> ${subj.pron === 'you' ? "you'd" : "the opponent had"} already reached ${subj.poss} target of ${target} by banking: continuing only risked busting a win that was already locked in.`;
       }
-    } else if (endgameZone){
-      const contOptimal = shouldContinue(d.resultingK, d.resultingT);
-      contOK = null;
-      contHtml = `<span class="tag meh">? uncertain: end-game zone</span> the race-blind table says ${contOptimal ? 'keep rolling' : 'bank'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}), but that table doesn't know the match is close to ending, not counted toward the tally.`;
     } else {
-      const contOptimal = shouldContinue(d.resultingK, d.resultingT);
-      contOK = d.continued === contOptimal;
-      if (contOK){
-        contHtml = `<span class="tag ok">✓ correct call</span>`;
+      // Prefer the exact race-aware threshold when it's actually solved for
+      // this target (the same data the Tactician persona itself plays by):
+      // a real answer instead of a guess, so this never needs to fall back
+      // to "uncertain" at the site's own default target.
+      const exact = RACE && target === RACE.G;
+      let contOptimal;
+      if (exact){
+        const i = Math.floor(preTurnScore / STEP), j = Math.floor(otherScore / STEP);
+        const th = raceThreshold(i, j, d.resultingK);
+        contOptimal = th >= 0 && d.resultingT <= th;
       } else {
-        contHtml = `<span class="tag no">✗ wrong call</span> exact play says ${subj.pron} should have ${contOptimal ? 'kept rolling' : 'banked'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}).`;
+        contOptimal = shouldContinue(d.resultingK, d.resultingT);
+      }
+      const matches = d.continued === contOptimal;
+      if (matches){
+        contOK = true;
+        contHtml = `<span class="tag ok">✓ correct call</span>`;
+      } else if (exact){
+        contOK = false;
+        contHtml = `<span class="tag no">✗ wrong call</span> exact race-aware play (accounting for both scores, not just this single turn) says ${subj.pron} should have ${contOptimal ? 'kept rolling' : 'banked'} here.`;
+      } else {
+        // No exact race-aware table for this target -- fall back to the
+        // single-turn threshold, but with the same negligible-gap leniency
+        // the dice-choice grading already gets (computed via the real
+        // continuing EV, not the embedded table, since vLookup collapses to
+        // exactly T once banking is the better call and can't reveal how
+        // much worse continuing would have been in that direction).
+        const contEV = continueEV(d.resultingK, d.resultingT);
+        const correctValue = contOptimal ? contEV : d.resultingT;
+        const gap = Math.abs(contEV - d.resultingT);
+        const negligible = gap < Math.max(25, 0.02 * correctValue);
+        const clearlyDecisive = gap > Math.max(250, 0.2 * correctValue);
+        if (negligible){
+          contOK = true;
+          contHtml = `<span class="tag meh">≈ near-optimal</span> exact play technically prefers to ${contOptimal ? 'keep rolling' : 'bank'} here (${contEV.toFixed(1)} vs ${d.resultingT}, a ${gap.toFixed(1)}-point difference), too small to matter in practice.`;
+        } else if (endgameZone && !clearlyDecisive){
+          contOK = null;
+          contHtml = `<span class="tag meh">? uncertain: end-game zone</span> the single-turn table says ${contOptimal ? 'keep rolling' : 'bank'} here, but it doesn't know the match target or the opponent's score, and this isn't a clear-cut case (see the strategy report's race-aware findings); not counted toward the tally.`;
+        } else {
+          contOK = false;
+          contHtml = `<span class="tag no">✗ wrong call</span> exact play says ${subj.pron} should have ${contOptimal ? 'kept rolling' : 'banked'} here (threshold for ${d.resultingK} dice is ${DP.thresholds[d.resultingK]}, ${subj.had} ${d.resultingT}).`;
+        }
       }
     }
 
