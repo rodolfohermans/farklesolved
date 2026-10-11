@@ -830,16 +830,32 @@ investigated several angles, only shipped the ones that are mathematically, veri
   a threshold decision at some edge-case boundary without exhaustively checking every state against
   the game's 1e-6 comparison epsilon. Skipped: small reward, real correctness risk, fails the
   "without compromises" bar.
-- Character-portrait cropping (user's suggestion -- the portraits are 70-80% transparent padding):
-  real opportunity, but `.character-layer`'s CSS uses `background-size:100% 100%` (stretch-to-fill
-  the container), so cropping each portrait to its OWN tight bounding box independently would
-  stretch different characters to different effective scales -- a real visible compromise, not
-  applied. A shared, symmetric crop (same margin removed from every portrait, keeping
-  `background-position:center` valid) was tested and only saved ~7.5% as the one case (Watchman) 
-  with large pips, these happen to look very close vertically and horizontally -- bounded the
-  achievable margin. A full per-character crop with per-character CSS positioning math would do
-  much better but adds real engineering complexity for files that aren't even embedded in the page
-  (portraits are same-origin fetches, not inline) -- deferred, not pursued further this session.
+- **Character-portrait cropping (user's suggestion -- the portraits are 70-80% transparent
+  padding by pixel area): investigated thoroughly, concluded it's not worth doing.** Two rounds:
+  1. First concern: `.character-layer`'s CSS uses `background-size:100% 100%` (stretch-to-fill),
+     so cropping each portrait to its OWN tight bounding box independently would stretch different
+     characters to different effective on-screen scales relative to each other -- a real visible
+     compromise. A conservative shared SYMMETRIC crop (equal margin off every side, every portrait,
+     keeping `background-position:center` valid with no other CSS change) only recovered ~7.5%,
+     bounded by whichever character has the least margin on a given axis (Watchman's content sits
+     closest to the top edge of all of them).
+  2. Reconsidered whether that 7.5% was an artifact of being overly conservative: worked out the
+     exact `background-size`/`background-position` percentage formula for a shared but
+     NON-symmetric crop (using the full union bounding box across all portraits, not a symmetric
+     one), which should strictly beat the symmetric version. Result: still only ~7.8%, whether
+     measured across all 9 portraits (including the 3 placeholders, which actually have a LARGER
+     relative footprint than the real art and briefly looked like they were the constraint) or
+     restricted to just the 6 real ones.
+  3. **Root cause, confirmed empirically, not a CSS limitation at all**: PNG/DEFLATE already
+     compresses large uniform transparent regions close to free (long runs of identical bytes
+     collapse under DEFLATE). The padding is 70-80% of the PIXEL AREA but nowhere near that share
+     of the FILE BYTES -- the file weight is dominated by the detailed character art itself, which
+     doesn't shrink no matter how much empty margin around it is trimmed.
+  4. Not applied. The ~18KB total saved across the 6 real portraits (`238,712 -> 220,099` bytes)
+     doesn't justify replacing `background-position:center` with a precise computed formula, and
+     these files are lazy-loaded same-origin fetches, not embedded -- this lever never touched the
+     actual page-weight pressure point this phase was solving anyway. The zopfli recompression
+     above already captured the real, available win for these same files.
 
 **Applied, verified lossless:**
 - **All PNGs re-compressed with zopfli** (`zopflipy`/`ZopfliPNG`, lossless mode, `lossy_transparent=
