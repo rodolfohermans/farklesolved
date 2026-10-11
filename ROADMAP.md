@@ -590,6 +590,32 @@ for a quick measurement), run head-to-head at a few bias magnitudes and a few st
 gaps, and reported as win-rate shift vs. bias magnitude. This is a measurement/report question,
 not necessarily a new opponent persona or site feature.
 
+**Groundwork laid (2026-10-12): `dice_catalog.json` -- real per-face bias magnitudes from the
+actual games, not invented ones.** Rather than picking an arbitrary bias to simulate, fetched the
+real loaded-dice catalogs so any future bias magnitude is calibrated to what the games actually
+ship:
+
+- **KCD2: all 43 dice, fully confirmed**, exact per-face percentages, from
+  `kingdom-come-deliverance.fandom.com/wiki/Dice/KCD2`. Bias ranges from mild (e.g. Greasy die,
+  17.6/11.8/17.6/11.7/17.6/23.5) to extreme (Weighted die, 66.7% on a single face; Grozav's lucky
+  die, 66.7% on another). One die (Balatro's die) has no fixed distribution at all (a rules
+  gimmick, not a probability bias) and is recorded as `null`.
+- **KCD1: 17 named dice confirmed to exist** (wiki.gg's dice category listing), but wiki.gg's
+  Cloudflare challenge blocked most individual per-die page fetches after the first couple of
+  requests in a session (inconsistent, not a hard block -- two requests got through before it
+  kicked in). Of the 17: **2 confirmed directly** (Biased die, Ci die, fetched from their own
+  KCD1 wiki.gg pages), **10 inferred** from an exact-or-near name match in the KCD2 catalog (e.g.
+  KCD1's "Holy Trinity die" -> KCD2's identically-named entry), on the strength that both
+  confirmed cases were BYTE-FOR-BYTE identical to their KCD2 namesakes -- real evidence the
+  sequel reused the predecessor's data for carried-over dice, not just a convenient assumption.
+  **5 remain unknown this session** (Alfonse's devil die, Henry's Beta Die, Lucky playing die,
+  The commonest die, Unpopular die) -- no KCD2 name match to infer from, and direct fetches stayed
+  blocked. See `dice_catalog.json`'s `_meta.confidence_levels` for exactly which tier each entry
+  is in; don't treat `inferred_from_kcd2` entries as fully equivalent to `confirmed` ones in a
+  final report.
+- Still not implemented: the actual bias-vs-strategy-skill simulation itself (the questions posed
+  above). This phase's groundwork is data-gathering only.
+
 ## Phase 12 (future, not scheduled): myth-driven opponent persona
 
 Raised 2026-10-11 during the Phase 10 race-aware opponent work: the name "Gambler" evokes
