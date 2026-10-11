@@ -432,6 +432,7 @@ function startMatch(){
     decisions: [], // this turn's recorded player decisions
     bankedGroups: {player: [], opponent: []}, // this turn's banked dice, grouped by scoring choice
     gameOver: false,
+    hasRolled: false, // no dice rolled yet this match -- changing settings needs no confirmation
   };
   document.getElementById('reviewArea').innerHTML = '';
   document.getElementById('bannerArea').innerHTML = '';
@@ -500,8 +501,14 @@ function renderIdle(){
   document.getElementById('oppBankedGroups').innerHTML = '';
 }
 
-// Changing target/opponent mid-match resets the match; confirm first.
+// Changing target/opponent mid-match resets the match; confirm first, but
+// only once something would actually be lost (at least one die rolled).
 function onSettingControlChanged(){
+  if (isGameActive() && !state.hasRolled){
+    // Nothing rolled yet this match -- nothing to lose, just apply directly.
+    startMatch();
+    return;
+  }
   if (isGameActive()){
     const ok = confirm('Changing this will reset the current match. Continue?');
     if (!ok){
@@ -632,6 +639,7 @@ function beginPlayerRoll_UI(){
 }
 
 function doPlayerRoll(){
+  state.hasRolled = true;
   setCupsRollable(false);
   const dice = rollDice(state.k);
   state.currentDice = dice;
@@ -1006,7 +1014,7 @@ function showReview(){
 
 /* ============================== WIRING ============================== */
 function handleStartButtonClick(){
-  if (isGameActive()){
+  if (isGameActive() && state.hasRolled){
     const ok = confirm('Starting a new match will reset the current match. Continue?');
     if (!ok) return;
   }
