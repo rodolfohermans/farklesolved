@@ -814,4 +814,61 @@ ordinary fact alongside that, not a punchline; the reveal line itself ("He reach
 closer look says otherwise, and he banks Y instead.") is neutral and matter-of-fact, describing a
 correction, not mocking a mistake. Portrait is a placeholder pending the project owner's own art.
 
+## Phase 14: Lossless asset recompression (page weight)
+
+Requested 2026-10-12 after the Gambler/Elder work pushed page weight to ~513-515KB, leaving the
+512KB Club's Blue tier only ~2% of headroom. Asked explicitly for savings "without compromises" --
+investigated several angles, only shipped the ones that are mathematically, verifiably lossless.
+
+**Investigated and NOT applied:**
+- `background.jpg` re-encoding at various JPEG qualities and WebP (lossy and lossless): every
+  re-encode from the already-compressed pixels came out LARGER than the current file for equal or
+  worse fidelity, meaning it was already efficiently encoded; a genuine further gain would need a
+  specialized encoder beyond what reprocessing already-lossy pixels can achieve.
+- `dp-data.json` float-precision rounding (2/1/0 decimals): only ~2.5-3% smaller, and rounding
+  changes individual V-table values by up to ~0.5, which isn't provably safe against ever flipping
+  a threshold decision at some edge-case boundary without exhaustively checking every state against
+  the game's 1e-6 comparison epsilon. Skipped: small reward, real correctness risk, fails the
+  "without compromises" bar.
+- Character-portrait cropping (user's suggestion -- the portraits are 70-80% transparent padding):
+  real opportunity, but `.character-layer`'s CSS uses `background-size:100% 100%` (stretch-to-fill
+  the container), so cropping each portrait to its OWN tight bounding box independently would
+  stretch different characters to different effective scales -- a real visible compromise, not
+  applied. A shared, symmetric crop (same margin removed from every portrait, keeping
+  `background-position:center` valid) was tested and only saved ~7.5% as the one case (Watchman) 
+  with large pips, these happen to look very close vertically and horizontally -- bounded the
+  achievable margin. A full per-character crop with per-character CSS positioning math would do
+  much better but adds real engineering complexity for files that aren't even embedded in the page
+  (portraits are same-origin fetches, not inline) -- deferred, not pursued further this session.
+
+**Applied, verified lossless:**
+- **All PNGs re-compressed with zopfli** (`zopflipy`/`ZopfliPNG`, lossless mode, `lossy_transparent=
+  False, lossy_8bit=False`): a better DEFLATE encoder for the exact same IDAT data, not a different
+  format or color reduction. Verified two ways: decoded pixel arrays compared byte-for-byte
+  identical (`numpy.array_equal`) for all 9 character portraits and 24 dice sprites, AND the raw
+  IHDR bytes (bit depth, color type, compression/filter method, interlacing) checked against the
+  git-committed originals to confirm zero structural change -- only the compressed stream itself
+  got smaller. 24 dice sprites (the ones actually embedded in the page, base64) alone:
+  71,903 -> 58,147 raw bytes, ~18.3KB off the embedded HTML. All 33 PNGs combined: 700,950 ->
+  323,962 bytes (46% smaller), the character portraits' improvement benefiting the lazy-loaded
+  fetch size even though it doesn't move the embedded-page number.
+- **`background.jpg` re-optimized with mozjpeg's lossless mode** (`mozjpeg-lossless-optimization`,
+  a pip-installable wheel bundling mozjpeg's `jpegtran`-equivalent lossless transform): re-arranges
+  Huffman tables and DCT coefficient scan structure without touching pixel data. Verified pixel-
+  identical via decoded array comparison. 119,976 -> 116,282 bytes. One real, disclosed side effect:
+  this converted the encoding from baseline (SOF0) to progressive (SOF2) scan mode, confirmed by
+  reading the raw SOF marker before and after. Progressive JPEG is part of the original 1992 JPEG
+  spec (ITU-T T.81), universally supported in every web browser for decades (including legacy ones);
+  verified empirically too, not just by spec claim: rendered the new file in an actual Chromium-
+  based browser (Brave, via Playwright), screenshotted it, zero console/page errors, visually
+  identical.
+- Net result: game pages dropped from ~513-515KB to ~489-491KB, restoring Blue-tier headroom from
+  ~2% back to ~7%. `about.html`, `about.es.html`, and `README.md`'s size claims updated to match
+  (including restoring "comfortably" now that the margin is healthy again).
+- Tools installed this session (`jpegoptim`/`optipng`/`pngquant`/`webp` via apt were attempted
+  first but blocked by non-interactive sudo in this sandbox; `mozjpeg-lossless-optimization` and
+  `zopflipy` via `pip install --user` worked without needing root): not committed as project
+  dependencies, used as one-off local tools for this recompression pass, not part of the build
+  pipeline (the optimized files are the committed artifacts, nothing re-runs this at build time).
+
 ---
