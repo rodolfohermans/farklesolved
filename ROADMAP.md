@@ -634,6 +634,37 @@ comparison), then:
    applies here, given these are explicitly *irrational* mechanics being deliberately added, not
    mathematically-grounded ones like Phase 10's.
 
+**Findings (2026-10-12, research code only -- `gambler_fallacies.py` -- nothing wired into the
+game):** all baseline action-choices are the Quartermaster's (bank the single highest-value
+combo, no DP lookahead), isolating each mechanic's effect to the continue/stop call. Results at
+target 4,000, seat-balanced, against the full Scholar-through-Priest roster:
+
+- **Gambler's fallacy** (push harder only on the turn right after a bust): stays statistically
+  indistinguishable from the Quartermaster across the ENTIRE magnitude range tested, 0% to 300%
+  threshold inflation (nearest-persona sum-sq distance 0.0003-0.0012, only drifting slightly
+  toward the Watchman at the extreme 300% setting). **This is the predicted negative result**:
+  the trigger (one single post-bust turn) is too rare (busts happen ~17-20% of turns) and too
+  short-lived (resets immediately) to shift the overall profile much, no matter how strongly it
+  pushes while active. As modeled, this mechanic does not clear the distinguishability bar. A
+  stronger version (escalating with CONSECUTIVE busts, or a longer decay window after one) was
+  not tested and is the obvious next thing to try before concluding gambler's fallacy can't work
+  as a persona at all.
+- **Hot-hand fallacy** (push further within a turn per consecutive successful bank): DOES clear
+  the bar, clearly. At magnitude=1.0 the bust rate hits 66.3%, higher than every existing
+  persona including the Drunkard (44%), driven by a genuinely different mechanism (escalating
+  greed tied to this turn's own success, not a fixed dice-count cutoff). This is the strongest
+  candidate of the three for an actual future persona.
+- **Loss-chasing / "emotional reactivity"** (amplify the Tactician's exact race-threshold
+  deviation by a multiplier past 1.0x): produces a striking, well-explained result rather than a
+  smooth dial. exaggeration=1.0 reproduces the Tactician (50.98% vs Scholar); exaggeration=1.1 (a
+  mere 10% overshoot) already drops to 41.6%, and it keeps falling sharply from there (28.4% by
+  1.5x, worse than the Priest's own baseline by 4.0x). This isn't a modeling artifact: the exact
+  race threshold is BY DEFINITION the indifference point where continuing and stopping have equal
+  win probability, so any overshoot past it, in either direction, is stepping into objectively
+  net-negative territory with no gentle buffer zone. A shippable "loss-chasing" persona would need
+  a deliberately chosen exaggeration level (not "more is more superstitious"), since the failure
+  mode is a cliff, not a slope.
+
 ## Phase 13 (future, not scheduled): "The Elder" -- near-optimal play with misread dice
 
 Raised 2026-10-11: a character with a near-optimal decision policy but a perceptual handicap
@@ -667,9 +698,11 @@ based. Researched and grounded in real perceptual psychology rather than invente
   phenomenon from the drinking angle already covered).
 
 Requested design constraint: the misperception should mostly be invisible, surfacing only when
-it would cause an illegal move, at which point it's revealed/corrected narratively. This is the
-most complex persona mechanic scoped so far and was NOT attempted in this session (explicitly
-deferred to keep the Phase 10 Tactician work from being left half-wired). It would need:
+it would cause an illegal move, at which point it's revealed/corrected narratively. This was NOT
+wired into the game in this session (explicitly deferred, first to keep the Phase 10 Tactician
+work from being left half-wired, then by explicit instruction to keep this at the research/code
+stage only). Research code was written and validated (`elder_perception.py`); the design below
+reflects what it actually implements, not just what was proposed:
 
 1. A "perceived dice" array: sample a confusion draw per die (each face has a small chance of
    being misread as its confusion-paired neighbor; 1 essentially never misreads).
@@ -684,5 +717,28 @@ deferred to keep the Phase 10 Tactician work from being left half-wired). It wou
 5. If legal (misperception happened not to change the outcome): proceed silently, no reveal.
 6. Independently, with some probability, drop straight-based actions from the considered action
    set entirely (the inattention mechanic), regardless of whether any pip-misread occurred.
+
+One consequence of this design worth stating explicitly: the running turn total never actually
+diverges from reality for more than a single roll, since every reveal re-syncs it immediately.
+The lasting cost of the handicap therefore comes entirely from misreads that happen to ALSO be
+legal on the true dice (so nothing reveals them) but weren't the objectively best choice -- not
+from the illegal-and-caught case, which self-corrects to the same decision the Scholar would make.
+
+**Findings (2026-10-12, research code only -- `elder_perception.py` -- nothing wired into the
+game):** both mechanisms produce smooth, well-behaved, independently tunable cost curves (no
+instability, unlike the Gambler's loss-chasing cliff above), making either a plausible difficulty
+knob. Win rate measured seat-balanced against the Scholar at target 4,000:
+
+- **Pip-confusion alone** (p_lose swept 0 to 0.25, p_gain fixed at p_lose/3, per the grounded
+  "losing a detail is more likely than hallucinating one" asymmetry): win rate vs Scholar falls
+  smoothly from 45.5% to 32.9%, bust rate rises from 20.2% to 29.5%, and the reveal rate (how
+  often a misread is actually caught as an illegal move) rises from 0% to 21.3% -- exactly the
+  expected shape, more confusion means more frequent, more consequential mistakes, some of which
+  get self-corrected and some of which don't.
+- **Straight-miss alone** (p_lose fixed at a moderate 0.08, p_miss_straight swept 0 to 1.0): a
+  separate, smaller but real cost, win rate falling from 44.2% to 33.0% over the full range.
+- Sample caught mistakes read as intended, e.g. a true `(6,4,4,5,3,3)` misperceived as
+  `(6,4,4,4,3,3)` (one 5 misread as a 4), intending to bank three 4s for 400 -- illegal on the
+  real dice, correctly caught and corrected to the only real legal move (banking the 5 alone).
 
 ---
