@@ -665,6 +665,18 @@ target 4,000, seat-balanced, against the full Scholar-through-Priest roster:
   a deliberately chosen exaggeration level (not "more is more superstitious"), since the failure
   mode is a cliff, not a slope.
 
+**Verification pass (2026-10-12, same session, 5x the evidence):** re-ran with N_RACE 6,000->
+30,000 and N_BEHAVIOR 15,000->75,000 (now the scripts' committed defaults), plus a finer
+exaggeration sweep (1.0/1.1/1.2/1.3/1.4/1.5) at the same 5x scale to see the loss-chasing cliff's
+actual shape instead of just its endpoints. All three conclusions above held with roughly half
+the confidence-interval width (~0.4-0.6pp vs ~1.1-1.3pp): gambler's-fallacy stayed statistically
+glued to the Quartermaster at every magnitude (nearest-persona distance 0.0000-0.0031, if
+anything tighter than before); hot-hand's bust rate came back at 66.9% (vs 66.3%); the fine sweep
+confirmed the cliff is immediate and sharp, not a sampling artifact of the original coarse
+sweep: 51.5% (exag=1.0) -> 41.8% (1.1) -> 36.9% (1.2) -> 32.7% (1.3) -> 30.3% (1.4) -> 28.7% (1.5),
+a ~9.7-point drop from just a 10% overshoot, reproducing the original run's 51.0%->41.6% step
+almost exactly.
+
 ## Phase 13 (future, not scheduled): "The Elder" -- near-optimal play with misread dice
 
 Raised 2026-10-11: a character with a near-optimal decision policy but a perceptual handicap
@@ -740,5 +752,13 @@ knob. Win rate measured seat-balanced against the Scholar at target 4,000:
 - Sample caught mistakes read as intended, e.g. a true `(6,4,4,5,3,3)` misperceived as
   `(6,4,4,4,3,3)` (one 5 misread as a 4), intending to bank three 4s for 400 -- illegal on the
   real dice, correctly caught and corrected to the only real legal move (banking the 5 alone).
+
+**Verification pass (2026-10-12, same session, 5x the evidence):** re-ran with N_BEHAVIOR 15,000->
+75,000 and N_RACE 10,000->50,000 (now the script's committed defaults). Both curves reproduced
+closely and stayed monotonic and smooth (confidence intervals tightened from ~0.9-1.0pp to
+~0.4pp): pip-confusion win rate vs Scholar 46.4%->32.9% (vs the original 45.5%->32.9%, same
+endpoints within noise), reveal rate 0%->20.7% (vs 0%->21.3%); straight-miss-alone win rate
+44.4%->33.5% (vs the original 44.2%->33.0%). No instability or non-monotonicity appeared at the
+larger sample size that the smaller run's confidence intervals could have been masking.
 
 ---

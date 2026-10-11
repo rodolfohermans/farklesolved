@@ -322,8 +322,8 @@ if __name__ == "__main__":
         "Priest": lambda my, opp: play_turn_firstscore(G, my),
     }
 
-    N_RACE = 6_000
-    N_BEHAVIOR = 15_000
+    N_RACE = 30_000
+    N_BEHAVIOR = 75_000
 
     print(f"\n=== Baseline behavior stats (standalone turns, n={N_BEHAVIOR}) ===")
     for name, fn in ROSTER.items():

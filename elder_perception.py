@@ -244,8 +244,8 @@ if __name__ == "__main__":
     print("Solving single-turn DP...")
     V, T_grid = farkle_dp.solve()
 
-    N_BEHAVIOR = 15_000
-    N_RACE = 10_000
+    N_BEHAVIOR = 75_000
+    N_RACE = 50_000
 
     scholar_fn = lambda my, opp: play_turn_scholar(G, my, V)
     scholar_stats = behavior_stats(lambda: scholar_fn(0, 0), n=N_BEHAVIOR)
